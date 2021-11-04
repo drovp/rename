@@ -6,9 +6,7 @@ import * as dayjs from 'dayjs';
 import {platformPaths} from 'platform-paths';
 import {eem, commonPathsRoot, pathExists, checksumFile, deletePath, uid, makeUndefinedProxy} from './lib/utils';
 import {ffprobe} from 'ffprobe-normalized';
-
-// @ts-ignore Used by templates.
-const time = dayjs;
+import {expandTemplateLiteral} from 'expand-template-literal';
 
 interface FileItem {
 	path: string;
@@ -103,7 +101,7 @@ export default async (
 		const file = files[i]!;
 		// Expose variables to template
 		const {path, dirname, isfile} = file;
-		const variables: Record<string, unknown> = {...commonVariables, ...file};
+		const variables: Record<string, unknown> = {...commonVariables, ...file, Path, time: dayjs};
 		variables.I = `${i}`.padStart(iPadSize, '0');
 		variables.n = i + 1;
 		variables.N = `${variables.n}`.padStart(nPadSize, '0');
@@ -152,18 +150,7 @@ export default async (
 		// Expand the template and create new path
 		let newName: string;
 		try {
-			// This would be SO MUCH SIMPLER and elegant if I could just use `with` statement :((
-			// Future me, don't try: `with` is disabled in strict mode, and a lot of future ES specs either work only in
-			// or at least assume strict mode, so disabling it is just creating potential future problems. Like I think
-			// ES modules are forced strict mode... fuck.
-			// Just to have something to cry about, the below monstrosity would just be this one line:
-			// with (commonVariables) with (fileVariables) newName = eval(`\`${template}\``).trim();
-			newName = eval(`(() => {
-				${Object.entries(variables)
-					.map(([name, value]) => `const ${name} = ${value != null ? JSON.stringify(value) : `${value}`};`)
-					.join('')}
-				return \`${template}\`;
-			})()`).trim();
+			newName = expandTemplateLiteral(template, variables).trim();
 		} catch (error) {
 			if (error instanceof SkipError) {
 				console.log(`Skipping file "${path}": ${error.message}`);

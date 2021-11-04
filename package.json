@@ -41,6 +41,7 @@
 		"@drovp/types": "^3.0.2",
 		"crc32-stream": "^4.0.2",
 		"dayjs": "^1.10.7",
+		"expand-template-literal": "^1.0.1",
 		"ffprobe-normalized": "^1.0.1",
 		"platform-paths": "^1.2.2"
 	},
