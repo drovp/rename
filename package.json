@@ -1,6 +1,6 @@
 {
 	"name": "@drovp/rename",
-	"version": "1.0.3",
+	"version": "1.0.4",
 	"description": "Bulk rename files according to a configured template.",
 	"main": "dist/index.js",
 	"homepage": "https://github.com/drovp/rename",
