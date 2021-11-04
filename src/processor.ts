@@ -32,17 +32,10 @@ export default async (
 	{inputs, options: {template, sorting, overwrite, emit, onMissingMeta, simulate, verbose}}: Payload,
 	{output, dependencies}: ProcessorUtils<{ffprobe: string}>
 ) => {
-	template = template.replace(/\r?\n/g, '');
-	const commonVariables: Record<string, string | number> = {
-		starttime: Date.now(),
-	};
+	// Normalize template
+	template = template.replace(/\r?\n/g, '').trim();
 
-	// Platform paths
-	for (const name of Object.keys(platformPaths) as (keyof typeof platformPaths)[]) {
-		if (template.includes(name)) commonVariables[name] = await platformPaths[name]();
-	}
-
-	// Build files array
+	// Build normalized files array
 	const files: FileItem[] = [];
 
 	for (const input of inputs) {
@@ -82,9 +75,27 @@ export default async (
 		}
 	}
 
+	// Declare common variables
+	const commonVariables: Record<string, any> = {
+		// Data
+		starttime: Date.now(),
+		files,
+
+		// Utilities
+		Path,
+		time: dayjs,
+		uid,
+	};
+
+	// Platform paths
+	for (const name of Object.keys(platformPaths) as (keyof typeof platformPaths)[]) {
+		if (template.includes(name)) commonVariables[name] = await platformPaths[name]();
+	}
+
 	// Find common directory
 	let commondir = files[0]!.dirname;
 	for (let i = 1; i < files.length; i++) commondir = commonPathsRoot(commondir, files[i]!.path);
+	commonVariables.commondir = commondir;
 
 	console.log(`commondir: ${commondir}`);
 
@@ -101,14 +112,14 @@ export default async (
 		const file = files[i]!;
 		// Expose variables to template
 		const {path, dirname, isfile} = file;
-		const variables: Record<string, unknown> = {...commonVariables, ...file, Path, time: dayjs};
+		const variables: Record<string, unknown> = {...commonVariables, ...file};
 		variables.I = `${i}`.padStart(iPadSize, '0');
 		variables.n = i + 1;
 		variables.N = `${variables.n}`.padStart(nPadSize, '0');
-		let meta: any = {};
 
 		// Extract file meta
 		if (extractMeta) {
+			let meta: any;
 			try {
 				if (!isfile) throw new Error(`Directories don't have meta data.`);
 				meta = await ffprobe(path, {path: dependencies.ffprobe});
@@ -125,7 +136,7 @@ export default async (
 
 			if (verbose) console.log(`Meta for file "${path}":`, meta);
 
-			meta =
+			variables.meta =
 				onMissingMeta === 'ignore'
 					? meta || {}
 					: makeUndefinedProxy(meta, {
