@@ -4,7 +4,16 @@ import {promises as FSP} from 'fs';
 import * as Path from 'path';
 import * as dayjs from 'dayjs';
 import {platformPaths} from 'platform-paths';
-import {eem, commonPathsRoot, pathExists, checksumFile, deletePath, uid, makeUndefinedProxy} from './lib/utils';
+import {
+	eem,
+	commonPathsRoot,
+	pathExists,
+	statIfExists,
+	checksumFile,
+	deletePath,
+	uid,
+	makeUndefinedProxy,
+} from './lib/utils';
 import {ffprobe} from 'ffprobe-normalized';
 import {expandTemplateLiteral} from 'expand-template-literal';
 
@@ -227,7 +236,25 @@ export default async (
 
 			// Ensure destination directory exists
 			const newPathDirname = Path.dirname(newPath);
-			if (!(await pathExists(newPathDirname))) {
+			let destinationDirStat = await statIfExists(newPathDirname);
+
+			// If destination directory exists, but is a file, either throw, or
+			// recoverably delete it when overwrite is enabled.
+			if (destinationDirStat?.isFile()) {
+				if (overwrite) {
+					const tmpOldNewPathDirname = `${newPathDirname}.tmp${uid()}`;
+					rewindSteps.unshift({type: 'rename', from: tmpOldNewPathDirname, to: newPathDirname});
+					await FSP.rename(newPathDirname, tmpOldNewPathDirname);
+					toDeleteOnSuccess.push(tmpOldNewPathDirname);
+					destinationDirStat = undefined;
+				} else {
+					throw new Error(
+						`Can't rename file:\n"${path}"\nto:\n"${newPath}"\nbecause destination directory is a file, and Overwrite option is disabled.`
+					);
+				}
+			}
+
+			if (!destinationDirStat) {
 				await FSP.mkdir(newPathDirname, {recursive: true});
 				rewindSteps.unshift({type: 'delete', path: newPathDirname});
 			}

@@ -37,6 +37,12 @@ export async function pathExists(path: string) {
 	}
 }
 
+export async function statIfExists(path: string) {
+	try {
+		return await FSP.stat(path);
+	} catch {}
+}
+
 export async function checksumFile(
 	hashName: 'crc32' | 'md5' | 'sha1' | 'sha256' | 'sha512',
 	path: string
