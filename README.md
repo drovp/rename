@@ -1,6 +1,6 @@
 # @drovp/rename
 
-Bulk rename files according to a configured template.
+[Drovp](https://drovp.app) plugin for bulk renaming files according to a configured template.
 
 Features:
 
