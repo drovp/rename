@@ -1,23 +1,64 @@
-# @drovp/rename
-
-Bulk rename files according to a configured template.
-
-Features:
-
--   Powerful templating using JavaScript template literals.
--   Extensive variables and utilities available in template expressions.
--   Supports moving files up/down the directory tree, or between partitions/drives.
--   Computes crc32, md5, sha1, sha256, sha512 file checksums when template asks for it.
--   Extracts meta data (artist, title, ...) from media files when template asks for it.
--   Variables for paths to common platform folders such as home, downloads, documents, pictures, music, videos,...
--   Checks for file name conflicts before renaming.
--   If any error occurs during renaming, will attempt to revert all changes that happened before the error.
-
 ## Templates
 
-Templates are JavaScript template literals allowing embedded expressions.
+Templates are JavaScript template literals allowing embedded expressions with access to a lot of useful variables and utilities. Example:
 
-_All variables and utilities available in templates are documented in profile's instructions._
+```
+${filename}_suffix.${ext}
+```
+
+If template is a relative path (doesn't start with `/` or a drive letter), it'll be resolved from the file's current directory. This means you don't have to prepend it in every template, and can use `../` to move files up in directory tree, `foo/...` to move them into a new one, and combination of both.
+
+If template moves file into a directory that doesn't exist, it'll be created.
+
+You can split long templates with new lines, they'll be removed before template is expanded.
+
+### Current file variables
+
+`path` - full file/folder path → `/foo/bar/baz.jpg`
+`basename` - file basename → `baz.jpg`
+`filename` - file name without the extension → `baz`
+`extname` - file extension with the dot → `.jpg`
+`ext` - file extension without the dot → `jpg`
+`dirname` - directory path → `/foo/bar`
+`dirbasename` - name of a parent directory → `bar`
+`size` - file size in bytes, 0 for folders
+`atime` - last access time in unix epoch milliseconds
+`mtime` - last modification time in unix epoch milliseconds
+`ctime` - last status change time (permission, rename, ...) in unix epoch milliseconds
+`birthtime` - file creation time in unix epoch milliseconds
+`isfile` - boolean if item is a file
+`isdirectory` - boolean if item is a directory
+`crc32/md5/sha1/sha256/sha512` - lowercase file checksums
+`CRC32/MD5/SHA1/SHA256/SHA512` - uppercase file checksums
+`i` - 0 based index in current batch
+`I` - 0 based index automatically padded for the current batch \*
+`n` - 1 based index in current batch
+`N` - 1 based index automatically padded for the current batch \*
+
+_\* These number are automatically padded with zeroes when necessary. If batch is between 1-9 files, there's no padding, if batch is between 10-99 files, 0-9 numbers are padded with 1 zero, etc..._
+
+### Common variables for all files
+
+`commondir` - common directory of all dropped files in current batch
+`starttime` - time when renaming started in unix epoch milliseconds
+
+Platform folder paths: `tmp`, `home`, `downloads`, `documents`, `pictures`, `music`, `videos`, `desktop`
+
+`files[]` - an array of files in current batch, each item being an object with these properties:
+
+```
+STRINGS: path, basename, filename, extname, ext, dirname, dirbasename
+NUMBERS: size, atime, mtime, ctime, birthtime
+BOOLEANS: isFile, isDirectory
+```
+
+Access with `files[0].basename`.
+
+### Utilities
+
+`Path` - Reference to <a href="https://nodejs.org/api/path.html">Node.js' `path` module</a>. Example: `Path.relative(foo, bar)`
+`time()` - <a href="https://day.js.org/docs/en/display/format">day.js</a> constructor to help with time. Example: `time().format('YY')`
+`uid(size? = 10)` - Unique string generator. Size argument is optional, default is 10. This is a way faster alternative to generating file checksums.
 
 ### Examples
 
