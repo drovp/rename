@@ -1,11 +1,5 @@
-import * as FS from 'fs';
+import {promises as FSP} from 'fs';
 import * as Path from 'path';
-import {createHash} from 'crypto';
-import * as Stream from 'stream';
-
-const {CRC32Stream} = require('crc32-stream'); // No types
-const FSP = FS.promises;
-const pipeline = Stream.promises.pipeline;
 
 /**
  * Extract error message.
@@ -41,26 +35,6 @@ export async function statIfExists(path: string) {
 	try {
 		return await FSP.stat(path);
 	} catch {}
-}
-
-export async function checksumFile(
-	hashName: 'crc32' | 'md5' | 'sha1' | 'sha256' | 'sha512',
-	path: string
-): Promise<string> {
-	// CRC32 is not supported natively
-	if (hashName === 'crc32') {
-		const hash = new CRC32Stream();
-		const pipe = pipeline(FS.createReadStream(path), hash);
-		hash.resume();
-		await pipe;
-		hash.end();
-		return hash.hex().toLowerCase();
-	}
-
-	const hash = createHash(hashName);
-	await pipeline(FS.createReadStream(path), hash);
-	hash.end();
-	return hash.digest('hex');
 }
 
 export async function deletePath(path: string) {

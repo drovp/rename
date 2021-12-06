@@ -4,17 +4,9 @@ import {promises as FSP} from 'fs';
 import * as Path from 'path';
 import * as dayjs from 'dayjs';
 import {platformPaths} from 'platform-paths';
-import {
-	eem,
-	commonPathsRoot,
-	pathExists,
-	statIfExists,
-	checksumFile,
-	deletePath,
-	uid,
-	makeUndefinedProxy,
-} from './lib/utils';
+import {eem, commonPathsRoot, pathExists, statIfExists, deletePath, uid, makeUndefinedProxy} from './lib/utils';
 import {ffprobe} from 'ffprobe-normalized';
+import {checksumFile} from '@tomasklaen/checksum';
 import {expandTemplateLiteral} from 'expand-template-literal';
 
 interface FileItem {
@@ -163,7 +155,7 @@ export default async (
 		// Compute checksums
 		if (isfile) {
 			for (const type of hashesToSum) {
-				variables[type] = variables[type.toUpperCase()] = await checksumFile('crc32', path);
+				variables[type] = variables[type.toUpperCase()] = await checksumFile(path, 'crc32');
 			}
 		}
 
