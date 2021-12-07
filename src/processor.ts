@@ -155,7 +155,9 @@ export default async (
 		// Compute checksums
 		if (isfile) {
 			for (const type of hashesToSum) {
-				variables[type] = variables[type.toUpperCase()] = await checksumFile(path, 'crc32');
+				const checksum = await checksumFile(path, type);
+				variables[type] = checksum;
+				variables[type.toUpperCase()] = checksum.toUpperCase();
 			}
 		}
 
@@ -220,7 +222,7 @@ export default async (
 
 			// Backup existing files so the operation can be rewound, and register them up for deletion
 			if (existingPaths.has(newPath)) {
-				const tmpPath = `${newPath}.tmp${uid}`;
+				const tmpPath = `${newPath}.tmp${uid()}`;
 				rewindSteps.unshift({type: 'rename', from: tmpPath, to: newPath});
 				await FSP.rename(newPath, tmpPath);
 				toDeleteOnSuccess.push(tmpPath);
