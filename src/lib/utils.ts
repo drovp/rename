@@ -63,16 +63,12 @@ export class FailProxyError extends Error {
  */
 export function makeUndefinedProxy(
 	target: any,
-	{
-		onMissingProp,
-		onMissingTarget,
-	}: {onMissingProp: (prop: string, value: undefined | null) => any; onMissingTarget: () => any}
+	{onMissingProp}: {onMissingProp: (prop: string, value: undefined | null) => any}
 ) {
 	function get(_: unknown, prop: string | symbol, receiver: any) {
 		if (prop === 'toJSON') return target;
-		const value = target[prop];
 		if (typeof prop !== 'string') return;
-		if (target == null) return onMissingTarget();
+		const value = target?.[prop];
 		if (value == null) return onMissingProp(prop, value);
 		return value;
 	}

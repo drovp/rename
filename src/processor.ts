@@ -120,9 +120,14 @@ export default async (
 
 		// Extract file meta
 		if (extractMeta) {
-			let meta: any;
+			let meta: any = {};
 			try {
-				if (!isfile) throw new Error(`Directories don't have meta data.`);
+				if (!isfile) {
+					output.error(
+						`Your template requests metadata, but you've dropped a directory into the profile without expand directories option enabled, and directories don't have meta data.`
+					);
+					return;
+				}
 				meta = await ffprobe(path, {path: dependencies.ffprobe});
 			} catch (error) {
 				switch (onMissingMeta) {
@@ -139,12 +144,8 @@ export default async (
 
 			variables.meta =
 				onMissingMeta === 'ignore'
-					? meta || {}
+					? meta
 					: makeUndefinedProxy(meta, {
-							onMissingTarget: () => {
-								const ErrorType = onMissingMeta === 'skip' ? SkipError : Error;
-								throw new ErrorType(`Meta is missing.`);
-							},
 							onMissingProp: (prop) => {
 								const ErrorType = onMissingMeta === 'skip' ? SkipError : Error;
 								throw new ErrorType(`Meta property "${prop}" is missing.`);
