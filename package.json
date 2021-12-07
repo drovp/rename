@@ -32,6 +32,7 @@
 		"watch": "tsc --watch",
 		"clean": "rimraf dist",
 		"start": "npm-run-all clean watch",
+		"test": "tsc -p . --noEmit",
 		"preversion": "npm-run-all clean build",
 		"git-push": "git push",
 		"npm-publish": "npm publish",
@@ -41,7 +42,7 @@
 		"@drovp/types": "^3.0.2",
 		"@tomasklaen/checksum": "^1.0.1",
 		"dayjs": "^1.10.7",
-		"expand-template-literal": "^1.0.2",
+		"expand-template-literal": "^1.0.3",
 		"ffprobe-normalized": "^1.0.1",
 		"platform-paths": "^1.2.2"
 	},
