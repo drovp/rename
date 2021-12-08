@@ -114,6 +114,7 @@ export default async (
 		// Expose variables to template
 		const {path, dirname, isfile} = file;
 		const variables: Record<string, unknown> = {...commonVariables, ...file};
+		variables.i = i;
 		variables.I = `${i}`.padStart(iPadSize, '0');
 		variables.n = i + 1;
 		variables.N = `${variables.n}`.padStart(nPadSize, '0');
