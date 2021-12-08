@@ -114,10 +114,13 @@ export default async (
 		// Expose variables to template
 		const {path, dirname, isfile} = file;
 		const variables: Record<string, unknown> = {...commonVariables, ...file};
+		const n = i + 1;
 		variables.i = i;
 		variables.I = `${i}`.padStart(iPadSize, '0');
-		variables.n = i + 1;
-		variables.N = `${variables.n}`.padStart(nPadSize, '0');
+		variables.n = n;
+		variables.N = `${n}`.padStart(nPadSize, '0');
+		variables.offsetI = (amount: number) => `${i + amount}`.padStart(`${files.length - 1 + amount}`.length, '0');
+		variables.offsetN = (amount: number) => `${n + amount}`.padStart(`${files.length + amount}`.length, '0');
 
 		// Extract file meta
 		if (extractMeta) {
