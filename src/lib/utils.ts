@@ -59,7 +59,7 @@ export class FailProxyError extends Error {
 }
 
 /**
- * A read only proxy that takes over access to undnefined/null properties.
+ * A read only proxy that takes over access to undefined/null properties.
  */
 export function makeUndefinedProxy(
 	target: any,
