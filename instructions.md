@@ -14,69 +14,83 @@ You can split long templates with new lines, they'll be removed before template 
 
 ### Current file variables
 
-`path` - full file/folder path → `/foo/bar/baz.jpg`
-`basename` - file basename → `baz.jpg`
-`filename` - file name without the extension → `baz`
-`extname` - file extension with the dot → `.jpg`
-`ext` - file extension without the dot → `jpg`
-`dirname` - directory path → `/foo/bar`
-`dirbasename` - name of a parent directory → `bar`
-`size` - file size in bytes, 0 for folders
-`atime` - last access time in unix epoch milliseconds
-`mtime` - last modification time in unix epoch milliseconds
-`ctime` - last status change time (permission, rename, ...) in unix epoch milliseconds
-`birthtime` - file creation time in unix epoch milliseconds
-`isfile` - boolean if item is a file
-`isdirectory` - boolean if item is a directory
-`crc32/md5/sha1/sha256/sha512` - lowercase file checksums
-`CRC32/MD5/SHA1/SHA256/SHA512` - uppercase file checksums
-`i` - 0 based index in current batch
-`I` - 0 based index automatically padded for the current batch \*
-`n` - 1 based index in current batch
-`N` - 1 based index automatically padded for the current batch \*
+**`${path}`** - full file/folder path → `/foo/bar/baz.jpg`\
+**`${basename}`** - file basename → `baz.jpg`\
+**`${filename}`** - file name without the extension → `baz`\
+**`${extname}`** - file extension with the dot → `.jpg`\
+**`${ext}`** - file extension without the dot → `jpg`\
+**`${dirname}`** - directory path → `/foo/bar`\
+**`${dirbasename}`** - name of a parent directory → `bar`\
+**`${size}`** - file size in bytes, 0 for folders\
+**`${atime}`** - last access time in unix epoch milliseconds\
+**`${mtime}`** - last modification time in unix epoch milliseconds\
+**`${ctime}`** - last status change time (permission, rename, ...) in unix epoch milliseconds\
+**`${birthtime}`** - file creation time in unix epoch milliseconds\
+**`${isfile}`** - boolean if item is a file\
+**`${isdirectory}`** - boolean if item is a directory\
+**`${crc32/md5/sha1/sha256/sha512}`** - lowercase file checksums\
+**`${CRC32/MD5/SHA1/SHA256/SHA512}`** - uppercase file checksums\
+**`${i}`** - 0 based index in current batch\
+**`${I}`** - 0 based index automatically padded for the current batch\
+**`${n}`** - 1 based index in current batch\
+**`${N}`** - 1 based index automatically padded for the current batch\
+**`${offsetI(amount: number)}`** - offset `i` by `amount` and automatically pad it\
+**`${offsetN(amount: number)}`** - offset `n` by `amount` and automatically pad it
 
 _\* These number are automatically padded with zeroes when necessary. If batch is between 1-9 files, there's no padding, if batch is between 10-99 files, 0-9 numbers are padded with 1 zero, etc..._
 
 ### Common variables for all files
 
-`commondir` - common directory of all dropped files in current batch
-`starttime` - time when renaming started in unix epoch milliseconds
-
-Platform folder paths: `tmp`, `home`, `downloads`, `documents`, `pictures`, `music`, `videos`, `desktop`
-
-`files[]` - an array of files in current batch, each item being an object with these properties:
+**`${commondir}`** - common directory of all dropped files in current batch\
+**`${starttime}`** - time when renaming started in unix epoch milliseconds\
+**`${files[]}`** - an array of files in current batch, each item being an object with these properties:
 
 ```
 STRINGS: path, basename, filename, extname, ext, dirname, dirbasename
 NUMBERS: size, atime, mtime, ctime, birthtime
-BOOLEANS: isFile, isDirectory
+BOOLEANS: isfile, isdirectory
 ```
 
-Access with `files[0].basename`.
+Access with `${files[0].basename}`.
+
+Platform folders:\
+**`${tmp}`**, **`${home}`**, **`${downloads}`**, **`${documents}`**, **`${pictures}`**, **`${music}`**, **`${videos}`**, **`${desktop}`**
 
 ### Utilities
 
-`Path` - Reference to <a href="https://nodejs.org/api/path.html">Node.js' `path` module</a>. Example: `Path.relative(foo, bar)`
-`time()` - <a href="https://day.js.org/docs/en/display/format">day.js</a> constructor to help with time. Example: `time().format('YY')`
-`uid(size? = 10)` - Unique string generator. Size argument is optional, default is 10. This is a way faster alternative to generating file checksums.
+**`Path`** - Reference to [Node.js' `path` module](https://nodejs.org/api/path.html). Example: `${Path.relative(foo, bar)}`\
+**`time()`** - [day.js](https://day.js.org/docs/en/display/format) util to help with time. Example: `${time().format('YY')}`\
+**`uid(size? = 10)`** - Unique string generator. Size is optional, default is 10. This is a faster alternative to generating file checksums when uniqueness is all that is desired. Example: `${uid()}`
 
 ### Examples
 
-Serialize all dropped files with automatically padded index number:
+Serialize all dropped files with automatically padded 1 based index:
 
 ```
 ${N}${extname}
 ```
 
+Offset the 1 based index by 10 and automatically pad it with `offsetN()` util:
+
+```
+${offsetN(10)}${extname}
+```
+
+Pad a 1 based index with zeroes to a desired target length of 4:
+
+```
+${String(n).padStart(4, '0')}${extname}
+```
+
 ---
 
-Replace all `foo` occurences in a filename with `bar`:
+Replace all `foo` occurrences in a filename with `bar`:
 
 ```
 ${filename.replaceAll('foo', 'bar')}${extname}
 ```
 
-Replace all `foo` or `bar` occurences in a filename with `baz`:
+Replace all `foo` or `bar` occurrences in a filename with `baz`:
 
 ```
 ${filename.replace(/foo|bar/gi, 'baz')}${extname}
@@ -150,11 +164,11 @@ Flatten files by placing them all into a common directory of all dropped files, 
 
 ```
 ${commondir}/
-${Path.relative(commondir, dirname).replaceAll(Path.sep, '-')}
+${Path.relative(commondir, dirname).replace(/[\\\/\:]+/g, '-')}
 -${basename}
 ```
 
-_(Big tempaltes can be split into multiple lines to help with making sense of them. The new lines will be removed in the final filename.)_
+_(Big templates can be split into multiple lines to help with making sense of them. New lines will be removed in the final filename.)_
 
 Useful if you want to just throw a single directory into a profile with directory expansion enabled, and have it flatten all of the files inside it.
 
@@ -189,7 +203,7 @@ You'll get:
 
 ---
 
-Move file into your platform's pictures directory, ensuring no conflicts by prepending it's original directory location to the moved file name:
+Move file into your platform's pictures folder, ensuring no conflicts by prepending it's original location to the file name:
 
 ```
 ${pictures}/${path.replace(/[\\\/\:]+/g, '-')}

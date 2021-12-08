@@ -21,21 +21,33 @@ _All variables and utilities available in templates are documented in profile's 
 
 ### Examples
 
-Serialize all dropped files with automatically padded index number:
+Serialize all dropped files with automatically padded 1 based index:
 
 ```
 ${N}${extname}
 ```
 
+Offset the 1 based index by 10 and automatically pad it with `offsetN()` util:
+
+```
+${offsetN(10)}${extname}
+```
+
+Pad a 1 based index with zeroes to a desired target length of 4:
+
+```
+${String(n).padStart(4, '0')}${extname}
+```
+
 ---
 
-Replace all `foo` occurences in a filename with `bar`:
+Replace all `foo` occurrences in a filename with `bar`:
 
 ```
 ${filename.replaceAll('foo', 'bar')}${extname}
 ```
 
-Replace all `foo` or `bar` occurences in a filename with `baz`:
+Replace all `foo` or `bar` occurrences in a filename with `baz`:
 
 ```
 ${filename.replace(/foo|bar/gi, 'baz')}${extname}
@@ -109,11 +121,11 @@ Flatten files by placing them all into a common directory of all dropped files, 
 
 ```
 ${commondir}/
-${Path.relative(commondir, dirname).replaceAll(Path.sep, '-')}
+${Path.relative(commondir, dirname).replace(/[\\\/\:]+/g, '-')}
 -${basename}
 ```
 
-_(Big tempaltes can be split into multiple lines to help with making sense of them. The new lines will be removed in the final filename.)_
+_(Big templates can be split into multiple lines to help with making sense of them. New lines will be removed in the final filename.)_
 
 Useful if you want to just throw a single directory into a profile with directory expansion enabled, and have it flatten all of the files inside it.
 
@@ -148,7 +160,7 @@ You'll get:
 
 ---
 
-Move file into your platform's pictures directory, ensuring no conflicts by prepending it's original directory location to the moved file name:
+Move file into your platform's pictures folder, ensuring no conflicts by prepending it's original location to the file name:
 
 ```
 ${pictures}/${path.replace(/[\\\/\:]+/g, '-')}
