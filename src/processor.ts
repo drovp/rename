@@ -4,7 +4,16 @@ import {promises as FSP} from 'fs';
 import * as Path from 'path';
 import * as dayjs from 'dayjs';
 import {platformPaths} from 'platform-paths';
-import {eem, commonPathsRoot, pathExists, statIfExists, deletePath, uid, makeUndefinedProxy} from './lib/utils';
+import {
+	eem,
+	commonPathsRoot,
+	pathExists,
+	statIfExists,
+	deletePath,
+	uid,
+	makeUndefinedProxy,
+	isSamePath,
+} from './lib/utils';
 import {ffprobe} from 'ffprobe-normalized';
 import {checksumFile} from '@tomasklaen/checksum';
 import {expandTemplateLiteral} from 'expand-template-literal';
@@ -190,7 +199,7 @@ export default async (
 		}
 
 		// File conflict with existing files
-		if (await pathExists(newPath)) {
+		if (!isSamePath(path, newPath) && await pathExists(newPath)) {
 			existingPaths.add(newPath);
 			if (!overwrite) {
 				output.error(

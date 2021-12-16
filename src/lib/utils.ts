@@ -1,6 +1,8 @@
 import {promises as FSP} from 'fs';
 import * as Path from 'path';
 
+const isWindows = process.platform === 'win32';
+
 /**
  * Extract error message.
  */
@@ -74,4 +76,19 @@ export function makeUndefinedProxy(
 	}
 
 	return new Proxy({}, {get});
+}
+
+/**
+ * Check if 2 paths lead to the same file.
+ */
+export function isSamePath(pathA: string, pathB: string) {
+	if (isWindows) {
+		pathA = pathA.toLowerCase();
+		pathB = pathB.toLowerCase();
+	}
+	return normalizePath(pathA) === normalizePath(pathB);
+}
+
+function normalizePath(path: string) {
+	return Path.normalize(path.trim().replace(/[\\\/]+$/, ''));
 }
