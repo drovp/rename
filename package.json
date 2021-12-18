@@ -25,7 +25,8 @@
 		"access": "public"
 	},
 	"files": [
-		"dist"
+		"dist",
+		"instructions.md"
 	],
 	"scripts": {
 		"build": "tsc",
