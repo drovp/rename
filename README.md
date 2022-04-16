@@ -189,3 +189,10 @@ bar 1.jpg
 bar 2.jpg
 bar 3.jpg
 ```
+
+## Changelog
+
+### 2.1.0
+
+-   Added filename sanitization with **Replacement** and **Max length** options.
+-   All file related data, such as `meta` and all checksums (`crc32`, ...) are now also accessible via `files[i].prop` access point.
