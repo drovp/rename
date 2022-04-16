@@ -7,6 +7,8 @@ type Options = {
 	overwrite: boolean;
 	emit: boolean;
 	onMissingMeta: 'abort' | 'skip' | 'ignore';
+	replacement: string;
+	maxLength: number;
 	simulate: boolean;
 	verbose: boolean;
 };
@@ -57,6 +59,24 @@ const optionsSchema: OptionsSchema<Options> = [
 		},
 		title: 'On missing meta',
 		description: `What to do when template requires file meta data, but it couldn't be retrieved for any file in a batch.`,
+	},
+	{
+		name: 'replacement',
+		type: 'string',
+		default: '!',
+		title: 'Replacement',
+		cols: 5,
+		description: `Character(s) to use in place of filename incompatible ones.<br>On Unix-like systems, <code>/</code> is reserved. On Windows, <code>&lt;&gt;:"/\|?*</code> along with trailing periods are reserved.`,
+	},
+	{
+		name: 'maxLength',
+		type: 'number',
+		default: 100,
+		min: 1,
+		max: 255,
+		step: 1,
+		title: 'Max length',
+		description: `Max filename length. Extensions will be preserved when possible.<br>Systems generally allow up to 255 characters, but that is asking for trouble, especially on Windows.`,
 	},
 	{
 		name: 'emit',

@@ -45,6 +45,7 @@
 		"dayjs": "^1.11.1",
 		"expand-template-literal": "^1.0.3",
 		"ffprobe-normalized": "^1.0.1",
+		"filenamify": "^5.1.0",
 		"platform-paths": "^1.2.2"
 	},
 	"devDependencies": {

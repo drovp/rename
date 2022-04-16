@@ -17,6 +17,9 @@ import {
 import {ffprobe} from 'ffprobe-normalized';
 import {checksumFile} from '@tomasklaen/checksum';
 import {expandTemplateLiteral} from 'expand-template-literal';
+import type Filenamify from 'filenamify';
+
+const nativeImport = (name: string) => eval(`import('${name}')`);
 
 interface FileItem {
 	path: string;
@@ -39,9 +42,15 @@ interface FileItem {
 class SkipError extends Error {}
 
 export default async (
-	{inputs, options: {template, sorting, overwrite, emit, onMissingMeta, simulate, verbose}}: Payload,
+	{
+		inputs,
+		options: {template, sorting, overwrite, emit, onMissingMeta, replacement, maxLength, simulate, verbose},
+	}: Payload,
 	{output, dependencies}: ProcessorUtils<{ffprobe: string}>
 ) => {
+	// ESM dependencies
+	const filenamify = (await nativeImport('filenamify')).default as typeof Filenamify;
+
 	// Normalize template
 	template = template.replace(/\r?\n/g, '').trim();
 
@@ -178,7 +187,18 @@ export default async (
 		// Expand the template and create new path
 		let newName: string;
 		try {
-			newName = expandTemplateLiteral(template, variables).trim();
+			newName = filenamify(expandTemplateLiteral(template, variables).trim(), {replacement, maxLength: Infinity});
+			// TODO: use filenamify maxLength when this gets merged: https://github.com/sindresorhus/filenamify/pull/30
+			if (newName.length > maxLength) {
+				const extensionIndex = newName.lastIndexOf('.');
+				const filename = extensionIndex > -1 ? newName.slice(0, extensionIndex) : newName;
+				const extension = extensionIndex > -1 ? newName.slice(extensionIndex) : '';
+				newName =
+					extension.length >= maxLength
+						? newName.slice(0, maxLength)
+						: filename.slice(0, Math.max(1, Math.min(maxLength - extension.length, filename.length))) +
+						  extension;
+			}
 		} catch (error) {
 			if (error instanceof SkipError) {
 				console.log(`Skipping file "${path}": ${error.message}`);
@@ -199,7 +219,7 @@ export default async (
 		}
 
 		// File conflict with existing files
-		if (!isSamePath(path, newPath) && await pathExists(newPath)) {
+		if (!isSamePath(path, newPath) && (await pathExists(newPath))) {
 			existingPaths.add(newPath);
 			if (!overwrite) {
 				output.error(
