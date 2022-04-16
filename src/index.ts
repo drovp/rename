@@ -54,7 +54,7 @@ const optionsSchema: OptionsSchema<Options> = [
 		default: 'disabled',
 		options: {
 			abort: `Abort, don't rename anything`,
-			skip: `Skip renaming current file`,
+			skip: `Skip renaming metaless file`,
 			ignore: `Ignore, leave values as undefined`,
 		},
 		title: 'On missing meta',

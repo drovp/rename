@@ -43,18 +43,19 @@ _\* These number are automatically padded with zeroes when necessary. If batch i
 
 **`${commondir}`** - common directory of all dropped files in current batch\
 **`${starttime}`** - time when renaming started in unix epoch milliseconds\
-**`${files[]}`** - an array of files in current batch, each item being an object with these properties:
-
-```
-STRINGS: path, basename, filename, extname, ext, dirname, dirbasename
-NUMBERS: size, atime, mtime, ctime, birthtime
-BOOLEANS: isfile, isdirectory
-```
-
-Access with `${files[0].basename}`.
+**`${files[]}`** - an array of all files in current batch to access data from files other than current one. Useful to access data for first, last, previous, or next file in batch.\
+Access with `${files[i].basename}`.
 
 Platform folders:\
 **`${tmp}`**, **`${home}`**, **`${downloads}`**, **`${documents}`**, **`${pictures}`**, **`${music}`**, **`${videos}`**, **`${desktop}`**
+
+### Meta
+
+Templates for media files can also access their meta data via `${meta.property}`. Available properties:
+
+```
+title, artist, track, genre, year, language, codec, container, channels, framerate, width, height
+```
 
 ### Utilities
 

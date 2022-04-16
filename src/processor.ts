@@ -14,14 +14,14 @@ import {
 	makeUndefinedProxy,
 	isSamePath,
 } from './lib/utils';
-import {ffprobe} from 'ffprobe-normalized';
+import {ffprobe, MetaData} from 'ffprobe-normalized';
 import {checksumFile} from '@tomasklaen/checksum';
 import {expandTemplateLiteral} from 'expand-template-literal';
 import type Filenamify from 'filenamify';
 
 const nativeImport = (name: string) => eval(`import('${name}')`);
 
-interface FileItem {
+type FileItem = {
 	path: string;
 	basename: string;
 	filename: string;
@@ -37,6 +37,23 @@ interface FileItem {
 	isfile: boolean;
 	isdirectory: boolean;
 	newPath?: string; // When missing, file rename will be skipped
+	meta?: MetaData;
+	crc32?: string;
+	md5?: string;
+	sha1?: string;
+	sha256?: string;
+	sha512?: string;
+	CRC32?: string;
+	MD5?: string;
+	SHA1?: string;
+	SHA256?: string;
+	SHA512?: string;
+	i?: number;
+	I?: string;
+	n?: number;
+	N?: string;
+	offsetI?: (amount: number) => string;
+	offsetN?: (amount: number) => string;
 }
 
 class SkipError extends Error {}
@@ -124,25 +141,27 @@ export default async (
 	const iPadSize = `${files.length - 1}`.length;
 	const nPadSize = `${files.length}`.length;
 	const lowercaseTemplate = template.toLowerCase();
-	const extractMeta = /(^|[^a-zA-Z0-9_\.])meta\s*(\.|\[)/.exec(template) != null;
-	const hashesToSum = ['crc32', 'md5', 'sha1', 'sha256', 'sha512'].filter((type) => lowercaseTemplate.includes(type));
+	const extractMeta = /(^|\W)meta\s*(\.|\[)/.exec(template) != null;
+	const hashesToSum = (['crc32', 'md5', 'sha1', 'sha256', 'sha512'] as const).filter((type) =>
+		lowercaseTemplate.includes(type)
+	);
 
+	// Populate files with necessary data
 	for (let i = 0; i < files.length; i++) {
 		const file = files[i]!;
-		// Expose variables to template
-		const {path, dirname, isfile} = file;
-		const variables: Record<string, unknown> = {...commonVariables, ...file};
+		const {path, isfile} = file;
 		const n = i + 1;
-		variables.i = i;
-		variables.I = `${i}`.padStart(iPadSize, '0');
-		variables.n = n;
-		variables.N = `${n}`.padStart(nPadSize, '0');
-		variables.offsetI = (amount: number) => `${i + amount}`.padStart(`${files.length - 1 + amount}`.length, '0');
-		variables.offsetN = (amount: number) => `${n + amount}`.padStart(`${files.length + amount}`.length, '0');
+		file.i = i;
+		file.I = `${i}`.padStart(iPadSize, '0');
+		file.n = n;
+		file.N = `${n}`.padStart(nPadSize, '0');
+		file.offsetI = (amount: number) => `${i + amount}`.padStart(`${files.length - 1 + amount}`.length, '0');
+		file.offsetN = (amount: number) => `${n + amount}`.padStart(`${files.length + amount}`.length, '0');
 
 		// Extract file meta
 		if (extractMeta) {
 			let meta: any = {};
+
 			try {
 				if (!isfile) {
 					output.error(
@@ -164,7 +183,7 @@ export default async (
 
 			if (verbose) console.log(`Meta for file "${path}":`, meta);
 
-			variables.meta =
+			file.meta =
 				onMissingMeta === 'ignore'
 					? meta
 					: makeUndefinedProxy(meta, {
@@ -176,13 +195,21 @@ export default async (
 		}
 
 		// Compute checksums
-		if (isfile) {
+		if (isfile && hashesToSum.length > 0) {
 			for (const type of hashesToSum) {
 				const checksum = await checksumFile(path, type);
-				variables[type] = checksum;
-				variables[type.toUpperCase()] = checksum.toUpperCase();
+				file[type] = checksum;
+				file[type.toUpperCase() as 'crc32'/*ugh*/] = checksum.toUpperCase();
 			}
 		}
+	}
+
+	// Expand templates
+	for (let i = 0; i < files.length; i++) {
+		const file = files[i]!;
+		// Expose variables to template
+		const {path, dirname} = file;
+		const variables: Record<string, unknown> = {...commonVariables, ...file};
 
 		// Expand the template and create new path
 		let newName: string;
