@@ -63,7 +63,7 @@ export default async (
 		inputs,
 		options: {template, sorting, overwrite, emit, onMissingMeta, replacement, maxLength, simulate, verbose},
 	}: Payload,
-	{output, dependencies}: ProcessorUtils<{ffprobe: string}>
+	{output, dependencies, log}: ProcessorUtils<{ffprobe: string}>
 ) => {
 	// ESM dependencies
 	const filenamify = (await nativeImport('filenamify')).default as typeof Filenamify;
@@ -133,7 +133,7 @@ export default async (
 	for (let i = 1; i < files.length; i++) commondir = commonPathsRoot(commondir, files[i]!.path);
 	commonVariables.commondir = commondir;
 
-	console.log(`commondir: ${commondir}`);
+	log(`commondir: ${commondir}`);
 
 	// Build renaming map
 	const newPaths = new Map<string, FileItem>();
@@ -173,7 +173,7 @@ export default async (
 			} catch (error) {
 				switch (onMissingMeta) {
 					case 'skip':
-						console.log(`Skipping file "${path}" as its meta couldn't be retrieved: ${eem(error)}`);
+						log(`Skipping file "${path}" as its meta couldn't be retrieved: ${eem(error)}`);
 						continue;
 					case 'abort':
 						output.error(`Meta couldn't be retrieved for file "${path}": ${eem(error)}`);
@@ -181,7 +181,7 @@ export default async (
 				}
 			}
 
-			if (verbose) console.log(`Meta for file "${path}":`, meta);
+			if (verbose) log(`Meta for file "${path}":`, meta);
 
 			file.meta =
 				onMissingMeta === 'ignore'
@@ -228,7 +228,7 @@ export default async (
 			}
 		} catch (error) {
 			if (error instanceof SkipError) {
-				console.log(`Skipping file "${path}": ${error.message}`);
+				log(`Skipping file "${path}": ${error.message}`);
 				continue;
 			}
 			output.error(`Template expansion error: ${eem(error)}`);
@@ -272,11 +272,11 @@ export default async (
 	const dirsToDeleteWhenEmpty = new Set<string>();
 
 	try {
-		console.log(`Renaming files${simulate ? ' (simulation)' : ''}...`);
+		log(`Renaming files${simulate ? ' (simulation)' : ''}...`);
 
 		for (const {path, newPath} of files) {
 			if (!newPath) continue; // Missing newPath means renaming this file should be skipped
-			if (simulate || verbose) console.log(`-- Renaming: -------\nFrom: "${path}"\n  To: "${newPath}"`);
+			if (simulate || verbose) log(`-- Renaming: -------\nFrom: "${path}"\n  To: "${newPath}"`);
 			if (simulate) continue;
 
 			dirsToDeleteWhenEmpty.add(Path.dirname(path));
@@ -328,11 +328,11 @@ export default async (
 			}
 		}
 
-		if (simulate || verbose) console.log('--------------------');
+		if (simulate || verbose) log('--------------------');
 
 		// When everything went well, clean up old files
 		if (toDeleteOnSuccess.length > 0) {
-			console.log(`Cleaning up ${toDeleteOnSuccess.length} old files...`);
+			log(`Cleaning up ${toDeleteOnSuccess.length} old files...`);
 
 			const failedCleanups: string[] = [];
 
@@ -341,7 +341,7 @@ export default async (
 					await deletePath(path);
 				} catch (error) {
 					failedCleanups.push(path);
-					console.log(eem(error));
+					log(eem(error));
 				}
 			}
 
@@ -355,7 +355,7 @@ export default async (
 
 		// Cleanup now empty directories
 		if (dirsToDeleteWhenEmpty.size > 0) {
-			console.log(`Cleaning up potential empty directories...`);
+			log(`Cleaning up potential empty directories...`);
 			dirsToDeleteWhenEmpty.add(commondir);
 			const dirsToDeleteWhenEmptyArray = [...dirsToDeleteWhenEmpty];
 
@@ -378,7 +378,7 @@ export default async (
 		output.error(eem(error));
 
 		// Rewind operations
-		console.log(`Attempting to rewind operations...`);
+		log(`Attempting to rewind operations...`);
 
 		for (const step of rewindSteps) {
 			switch (step.type) {
