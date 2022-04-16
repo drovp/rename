@@ -124,7 +124,7 @@ export default async (
 	const iPadSize = `${files.length - 1}`.length;
 	const nPadSize = `${files.length}`.length;
 	const lowercaseTemplate = template.toLowerCase();
-	const extractMeta = template.includes('meta.') || template.includes('meta[');
+	const extractMeta = /(^|[^a-zA-Z0-9_\.])meta\s*(\.|\[)/.exec(template) != null;
 	const hashesToSum = ['crc32', 'md5', 'sha1', 'sha256', 'sha512'].filter((type) => lowercaseTemplate.includes(type));
 
 	for (let i = 0; i < files.length; i++) {
