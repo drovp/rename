@@ -192,6 +192,10 @@ bar 3.jpg
 
 ## Changelog
 
+### 2.1.1
+
+- Fixed path sanitization breaking absolute paths.
+
 ### 2.1.0
 
 -   Added filename sanitization with **Replacement** and **Max length** options.
