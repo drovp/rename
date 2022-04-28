@@ -40,18 +40,18 @@
 		"postversion": "npm-run-all git-push npm-publish"
 	},
 	"dependencies": {
-		"@drovp/types": "^4.2.1",
+		"@drovp/types": "^4.6.0",
 		"@tomasklaen/checksum": "^1.1.0",
 		"dayjs": "^1.11.1",
 		"expand-template-literal": "^1.0.3",
 		"ffprobe-normalized": "^1.0.1",
-		"filenamify": "^5.1.0",
+		"filenamify": "^5.1.1",
 		"platform-paths": "^1.2.2"
 	},
 	"devDependencies": {
 		"npm-run-all": "^4.1.5",
 		"rimraf": "^3.0.2",
-		"tslib": "^2.3.1",
+		"tslib": "^2.4.0",
 		"typescript": "^4.6.3"
 	}
 }
