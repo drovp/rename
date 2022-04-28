@@ -13,13 +13,11 @@ import {
 	uid,
 	makeUndefinedProxy,
 	isSamePath,
+	sanitizePath,
 } from './lib/utils';
 import {ffprobe, MetaData} from 'ffprobe-normalized';
 import {checksumFile} from '@tomasklaen/checksum';
 import {expandTemplateLiteral} from 'expand-template-literal';
-import type Filenamify from 'filenamify';
-
-const nativeImport = (name: string) => eval(`import('${name}')`);
 
 type FileItem = {
 	path: string;
@@ -54,7 +52,7 @@ type FileItem = {
 	N?: string;
 	offsetI?: (amount: number) => string;
 	offsetN?: (amount: number) => string;
-}
+};
 
 class SkipError extends Error {}
 
@@ -65,9 +63,6 @@ export default async (
 	}: Payload,
 	{output, dependencies, log}: ProcessorUtils<{ffprobe: string}>
 ) => {
-	// ESM dependencies
-	const filenamify = (await nativeImport('filenamify')).default as typeof Filenamify;
-
 	// Normalize template
 	template = template.replace(/\r?\n/g, '').trim();
 
@@ -199,7 +194,7 @@ export default async (
 			for (const type of hashesToSum) {
 				const checksum = await checksumFile(path, type);
 				file[type] = checksum;
-				file[type.toUpperCase() as 'crc32'/*ugh*/] = checksum.toUpperCase();
+				file[type.toUpperCase() as 'crc32' /*ugh*/] = checksum.toUpperCase();
 			}
 		}
 	}
@@ -214,18 +209,7 @@ export default async (
 		// Expand the template and create new path
 		let newName: string;
 		try {
-			newName = filenamify(expandTemplateLiteral(template, variables).trim(), {replacement, maxLength: Infinity});
-			// TODO: use filenamify maxLength when this gets merged: https://github.com/sindresorhus/filenamify/pull/30
-			if (newName.length > maxLength) {
-				const extensionIndex = newName.lastIndexOf('.');
-				const filename = extensionIndex > -1 ? newName.slice(0, extensionIndex) : newName;
-				const extension = extensionIndex > -1 ? newName.slice(extensionIndex) : '';
-				newName =
-					extension.length >= maxLength
-						? newName.slice(0, maxLength)
-						: filename.slice(0, Math.max(1, Math.min(maxLength - extension.length, filename.length))) +
-						  extension;
-			}
+			newName = await sanitizePath(expandTemplateLiteral(template, variables).trim(), {replacement, maxLength});
 		} catch (error) {
 			if (error instanceof SkipError) {
 				log(`Skipping file "${path}": ${error.message}`);

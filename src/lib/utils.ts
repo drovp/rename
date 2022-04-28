@@ -1,5 +1,10 @@
 import {promises as FSP} from 'fs';
 import * as Path from 'path';
+import type Filenamify from 'filenamify';
+
+let filenamify: typeof Filenamify | undefined;
+
+const nativeImport = (name: string) => eval(`import('${name}')`);
 
 const isWindows = process.platform === 'win32';
 
@@ -89,6 +94,29 @@ export function isSamePath(pathA: string, pathB: string) {
 	return normalizePath(pathA) === normalizePath(pathB);
 }
 
-function normalizePath(path: string) {
-	return Path.normalize(path.trim().replace(/[\\\/]+$/, ''));
+const normalizePath = (path: string) => Path.normalize(path.trim().replace(/[\\\/]+$/, ''));
+
+/**
+ * Removes characters not allowed in paths, and trims each file/dir name to
+ * a reasonable length.
+ */
+export async function sanitizePath(value: string, options: {maxLength?: number; replacement?: string} = {}) {
+	if (!filenamify) filenamify = (await nativeImport('filenamify')).default as typeof Filenamify;
+
+	const sourceParts = `${value}`.split(/\s*[\\\/]+\s*/);
+	const resultParts: string[] = [];
+
+	for (let i = 0; i < sourceParts.length; i++) {
+		const part = sourceParts[i]!;
+
+		// Drive letter
+		if (i === 0 && part.match(/^\w+\:$/) != null) {
+			resultParts.push(part);
+			continue;
+		}
+
+		resultParts.push(filenamify(part, options));
+	}
+
+	return Path.join(...resultParts);
 }
