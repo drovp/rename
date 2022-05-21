@@ -232,7 +232,7 @@ export async function createRenameTable(
 		try {
 			let accessedMissingProps: string[] = [];
 			onMissingProp = (prop) => accessedMissingProps.push(prop);
-			newName = sanitizePath(expandTemplateLiteral(template, variables).trim(), {replacement, maxLength});
+			newName = expandTemplateLiteral(template, variables).trim();
 
 			// What to do when template accesses a missing meta property
 			if (accessedMissingProps.length > 0) {
@@ -256,7 +256,7 @@ export async function createRenameTable(
 		} catch (error) {
 			throw new Error(`Template expansion error: ${eem(error)}`);
 		}
-		const newPath = Path.resolve(dirname, newName);
+		const newPath = sanitizePath(Path.resolve(dirname, newName), {replacement, maxLength});
 
 		renameItem.outputPath = newPath;
 
