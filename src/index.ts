@@ -1,4 +1,4 @@
-import {Plugin, PayloadData, OptionsSchema, makeAcceptsFlags} from '@drovp/types';
+import {Plugin, PayloadData, OptionsSchema, makeAcceptsFlags, AppSettings} from '@drovp/types';
 
 type Options = {
 	template: string;
@@ -104,6 +104,7 @@ const acceptsFlags = makeAcceptsFlags<Options>()({
 export type Payload = PayloadData<Options, typeof acceptsFlags>;
 export interface PreparatorPayload {
 	payload: Payload;
+	settings?: AppSettings;
 	ffprobePath: string;
 }
 
@@ -121,6 +122,7 @@ export default (plugin: Plugin) => {
 			if (payload.options.preview || process.platform === 'darwin' ? 'meta' : 'ctrl' === utils.modifiers) {
 				const preparatorPayload: PreparatorPayload = {
 					payload,
+					settings: utils.settings,
 					ffprobePath: utils.dependencies.ffprobe as string,
 				};
 				const result = await utils.openModalWindow<Payload>(

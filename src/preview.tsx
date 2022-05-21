@@ -18,6 +18,21 @@ render(<Spinner />, container);
 
 getPayload<PreparatorPayload>()
 	.then((payload) => {
+		// Respect app settings
+		document.documentElement.style.setProperty('--font-size', `${payload.settings?.fontSize || 13}px`);
+
+		const theme = payload.settings?.theme || 'os';
+		if (theme === 'os') {
+			const darkModeMediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+			document.documentElement.dataset.theme = darkModeMediaQuery.matches ? 'dark' : 'light';
+			darkModeMediaQuery.addEventListener('change', (event) => {
+				document.documentElement.dataset.theme = event.matches ? 'dark' : 'light';
+			});
+		} else {
+			document.documentElement.dataset.theme = theme;
+		}
+
+		// Render the app
 		render(
 			<App
 				preparatorPayload={payload}

@@ -39,13 +39,13 @@
 			flex: calc(1 - var(--inputWidth, 0.5)) 1 0
 
 		&.-success
-			color: var(--success-700)
+			color: var(--success-z700)
 
 		&.-danger
-			color: var(--danger-700)
+			color: var(--danger-z700)
 
 		&.-warning
-			color: var(--warning-700)
+			color: var(--warning-z700)
 
 		> .path
 			flex: 0 1 auto
@@ -54,20 +54,17 @@
 			+selectable()
 
 		> .showMeta
+			margin-left: auto
 			flex: 0 0 auto
 			font-size: 10px
-			+size(18px)
-			border-radius: 99em
-			padding: 0
-			align-items: center
-			justify-content: center
-			flex-flow: row nowrap
+			cursor: help
 
 		> .showMessage
 			flex: 0 0 auto
 			font-size: 0.9em
 			height: 1.6em
 			margin-left: auto
+			cursor: help
 
 .ItemMessage
 	--padding: var(--spacing-three-quarters)

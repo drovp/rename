@@ -111,6 +111,7 @@ export function RenameItem({item, data}: {item: RenameItemData; data: RenameTabl
 	return (
 		<div class="RenameItem" onContextMenu={handleContext}>
 			<div class="cell -input" title={item.inputPath}>
+				<div class="path">&lrm;{commonDir ? item.inputPath.slice(commonDir.length + 1) : item.inputPath}</div>
 				{item.meta != null && (
 					<Button
 						class="showMeta"
@@ -121,7 +122,6 @@ export function RenameItem({item, data}: {item: RenameItemData; data: RenameTabl
 						Ⅿ
 					</Button>
 				)}
-				<div class="path">&lrm;{commonDir ? item.inputPath.slice(commonDir.length + 1) : item.inputPath}</div>
 			</div>
 			<div class="divider">»</div>
 			<div
