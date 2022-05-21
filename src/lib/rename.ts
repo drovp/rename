@@ -52,6 +52,9 @@ type InternalFile = {
 	N?: string;
 	offsetI?: (amount: number) => string;
 	offsetN?: (amount: number) => string;
+	padI?: (length: number, padString?: string) => string;
+	padN?: (length: number, padString?: string) => string;
+	pad?: (value: any, length: number, padString?: string) => string;
 };
 
 export interface RenameItem {
@@ -177,6 +180,9 @@ export async function createRenameTable(
 		file.N = `${n}`.padStart(nPadSize, '0');
 		file.offsetI = (amount: number) => `${i + amount}`.padStart(`${files.length - 1 + amount}`.length, '0');
 		file.offsetN = (amount: number) => `${n + amount}`.padStart(`${files.length + amount}`.length, '0');
+		file.padI = (length: number, padString = '0') => `${i}`.padStart(length, padString);
+		file.padN = (length: number, padString = '0') => `${n}`.padStart(length, padString);
+		file.pad = (value: unknown, length: number, padString = '0') => `${value}`.padStart(length, padString);
 
 		// Extract file meta
 		if (extractMeta) {

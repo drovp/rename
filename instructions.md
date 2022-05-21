@@ -12,40 +12,48 @@ You can split long templates with new lines, they'll be removed before template 
 
 ### Current file variables
 
-**`${path}`** - full file/folder path → `/foo/bar/baz.jpg`\
-**`${basename}`** - file basename → `baz.jpg`\
-**`${filename}`** - file name without the extension → `baz`\
-**`${extname}`** - file extension with the dot → `.jpg`\
-**`${ext}`** - file extension without the dot → `jpg`\
-**`${dirname}`** - directory path → `/foo/bar`\
-**`${dirbasename}`** - name of a parent directory → `bar`\
-**`${size}`** - file size in bytes, 0 for folders\
-**`${atime}`** - last access time in unix epoch milliseconds\
-**`${mtime}`** - last modification time in unix epoch milliseconds\
-**`${ctime}`** - last status change time (permission, rename, ...) in unix epoch milliseconds\
-**`${birthtime}`** - file creation time in unix epoch milliseconds\
-**`${isfile}`** - boolean if item is a file\
-**`${isdirectory}`** - boolean if item is a directory\
-**`${crc32/md5/sha1/sha256/sha512}`** - lowercase file checksums\
-**`${CRC32/MD5/SHA1/SHA256/SHA512}`** - uppercase file checksums\
-**`${i}`** - 0 based index in current batch\
-**`${I}`** - 0 based index automatically padded for the current batch\
-**`${n}`** - 1 based index in current batch\
-**`${N}`** - 1 based index automatically padded for the current batch\
-**`${offsetI(amount: number)}`** - offset `i` by `amount` and automatically pad it\
-**`${offsetN(amount: number)}`** - offset `n` by `amount` and automatically pad it
+**`path`** - full file/folder path → `/foo/bar/baz.jpg`\
+**`basename`** - file basename → `baz.jpg`\
+**`filename`** - file name without the extension → `baz`\
+**`extname`** - file extension with the dot → `.jpg`\
+**`ext`** - file extension without the dot → `jpg`\
+**`dirname`** - directory path → `/foo/bar`\
+**`dirbasename`** - name of a parent directory → `bar`\
+**`size`** - file size in bytes, 0 for folders\
+**`atime`** - last access time in unix epoch milliseconds\
+**`mtime`** - last modification time in unix epoch milliseconds\
+**`ctime`** - last status change time (permission, rename, ...) in unix epoch milliseconds\
+**`birthtime`** - file creation time in unix epoch milliseconds\
+**`isfile`** - boolean if item is a file\
+**`isdirectory`** - boolean if item is a directory\
+**`crc32,md5,sha1,sha256,sha512`** - lowercase file checksums\
+**`CRC32,MD5,SHA1,SHA256,SHA512`** - uppercase file checksums\
+**`i`** - 0 based index in current batch\
+**`I`** - 0 based index automatically padded for the current batch\
+**`n`** - 1 based index in current batch\
+**`N`** - 1 based index automatically padded for the current batch\
+**`offsetI(amount: number)`** \
+— offset `i` by `amount` and automatically pad it\
+**`offsetN(amount: number)`** \
+— offset `n` by `amount` and automatically pad it\
+**`padI(length: number, padStr? = '0')`** \
+— pad `i` to a `length` using `padStr` (default `0`) to fill gaps\
+**`padN(length: number, padStr? = '0')`** \
+— pad `n` to a `length` using `padStr` (default `0`) to fill gaps\
+**`pad(value: any, length: number, padStr? = '0')`** \
+— pad `value` to a `length` using `padStr` (default `0`) to fill gaps
 
 _\* These number are automatically padded with zeroes when necessary. If batch is between 1-9 files, there's no padding, if batch is between 10-99 files, 0-9 numbers are padded with 1 zero, etc..._
 
 ### Common variables for all files
 
-**`${commondir}`** - common directory of all dropped files in current batch\
-**`${starttime}`** - time when renaming started in unix epoch milliseconds\
-**`${files[]}`** - an array of all files in current batch to access data from files other than current one. Useful to access data for first, last, previous, or next file in batch.\
+**`commondir`** - common directory of all dropped files in current batch\
+**`starttime`** - time when renaming started in unix epoch milliseconds\
+**`files[]`** - an array of all files in current batch to access data from files other than current one. Useful to access data for first, last, previous, or next file in batch.\
 Access with `${files[i].basename}`.
 
 Platform folders:\
-**`${tmp}`**, **`${home}`**, **`${downloads}`**, **`${documents}`**, **`${pictures}`**, **`${music}`**, **`${videos}`**, **`${desktop}`**
+**`tmp`**, **`home`**, **`downloads`**, **`documents`**, **`pictures`**, **`music`**, **`videos`**, **`desktop`**
 
 ### Meta
 
@@ -78,7 +86,19 @@ ${offsetN(10)}${extname}
 Pad a 1 based index with zeroes to a desired target length of 4:
 
 ```
+${padN(4)}${extname}
+```
+
+... which is just a shorthand for:
+
+```
 ${String(n).padStart(4, '0')}${extname}
+```
+
+Pad any value, such as `n` to `4` letters while using underscore to fill gaps:
+
+```
+${pad(n, 4, '_')}${extname}
 ```
 
 ---
