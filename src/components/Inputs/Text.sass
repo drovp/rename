@@ -1,0 +1,69 @@
+.Text
+	--color: var(--fg)
+	--color-transparent: var(--fg)
+	--background: var(--darken)
+	--border: var(--grey-z300)
+	--border-focus: var(--grey-z600)
+	--rows: 1
+	--min-height: 0
+	position: relative
+	display: inline-block
+	max-width: 100%
+	min-height: var(--input-height)
+	height: max(calc((var(--rows) * 1.5em) + 1em), min(var(--min-height), 50vh))
+
+	@each $variant in $variants
+		&.-#{$variant}
+			--color: var(--#{$variant}-z900)
+			--color-transparent: var(--#{$variant}-z700)
+			--background: var(--#{$variant}-o200)
+			--border: var(--#{$variant}-z400)
+			--border-focus: var(--#{$variant}-z600)
+
+	> textarea
+		display: block
+		+size(100%)
+		padding: .6em
+		resize: none
+		font-family: var(--font-code)
+		tab-size: 2
+		color: var(--color)
+		background: var(--background)
+		border-radius: var(--border-radius)
+		border: 1px solid var(--border)
+		$tran: 300ms $out-expo
+		transition: color $tran, background $tran, transform $tran
+
+		&:focus
+			border-color: var(--border-focus)
+
+		&::placeholder
+			color: var(--muted)
+
+		&:is(.-transparent > *)
+			color: var(--color-transparent)
+			background: transparent
+			border: 0
+
+		&[disabled]
+			filter: grayscale(50%)
+			opacity: .5
+			@extend %disabled-stripes
+
+	> .resize-handle
+		--size: 10px
+		+absolute(_ _ calc(var(--size) / -2) 0)
+		width: 100%
+		height: var(--size)
+		cursor: ns-resize
+
+		&:hover:after
+			display: block
+			content: ''
+			+size(100% 4px)
+			+absolute(calc(50% - 2px) _ _ 0)
+			background: var(--border)
+			border-radius: 2px
+
+		&:is(:focus ~ *):after
+			background: var(--border-focus)

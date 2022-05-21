@@ -2,251 +2,31 @@ import type {ProcessorUtils} from '@drovp/types';
 import type {Payload} from './';
 import {promises as FSP} from 'fs';
 import * as Path from 'path';
-import * as dayjs from 'dayjs';
-import {platformPaths} from 'platform-paths';
-import {
-	eem,
-	commonPathsRoot,
-	pathExists,
-	statIfExists,
-	deletePath,
-	uid,
-	makeUndefinedProxy,
-	isSamePath,
-	sanitizePath,
-} from './lib/utils';
-import {ffprobe, MetaData} from 'ffprobe-normalized';
-import {checksumFile} from '@tomasklaen/checksum';
-import {expandTemplateLiteral} from 'expand-template-literal';
+import {eem, statIfExists, deletePath, uid} from './lib/utils';
+import {RenameItem, createRenameTable} from './lib/rename';
 
-type FileItem = {
-	path: string;
-	basename: string;
-	filename: string;
-	extname: string;
-	ext: string;
-	dirname: string;
-	dirbasename: string;
-	size: number;
-	atime: number;
-	mtime: number;
-	ctime: number;
-	birthtime: number;
-	isfile: boolean;
-	isdirectory: boolean;
-	newPath?: string; // When missing, file rename will be skipped
-	meta?: MetaData;
-	crc32?: string;
-	md5?: string;
-	sha1?: string;
-	sha256?: string;
-	sha512?: string;
-	CRC32?: string;
-	MD5?: string;
-	SHA1?: string;
-	SHA256?: string;
-	SHA512?: string;
-	i?: number;
-	I?: string;
-	n?: number;
-	N?: string;
-	offsetI?: (amount: number) => string;
-	offsetN?: (amount: number) => string;
-};
-
-class SkipError extends Error {}
+type TmpRenameItem = RenameItem & {tmpPath: string};
+const divider = '\n--------------------';
 
 export default async (
-	{
-		inputs,
-		options: {template, sorting, overwrite, emit, onMissingMeta, replacement, maxLength, simulate, verbose},
-	}: Payload,
+	{id, inputs, options}: Payload,
 	{output, dependencies, log}: ProcessorUtils<{ffprobe: string}>
 ) => {
-	// Normalize template
-	template = template.replace(/\r?\n/g, '').trim();
+	log(`Template:${divider}\n${options.template}${divider}`);
 
-	// Build normalized files array
-	const files: FileItem[] = [];
+	const renameTable = await createRenameTable(inputs, options, {ffprobePath: dependencies.ffprobe});
+	const {errors, existingPaths, commonInputDir} = renameTable;
 
-	for (const input of inputs) {
-		const stat = await FSP.stat(input.path);
-		const extname = Path.extname(input.path);
-		const dirname = Path.dirname(input.path);
-		files.push({
-			path: input.path,
-			basename: Path.basename(input.path),
-			filename: Path.basename(input.path, extname),
-			extname,
-			ext: extname[0] === '.' ? extname.slice(1) : extname,
-			dirname,
-			dirbasename: Path.basename(dirname),
-			size: stat.size,
-			atime: stat.atimeMs,
-			mtime: stat.mtimeMs,
-			ctime: stat.ctimeMs,
-			birthtime: stat.birthtimeMs,
-			isfile: stat.isFile(),
-			isdirectory: stat.isDirectory(),
-		});
-	}
-
-	// Sort files
-	switch (sorting) {
-		case 'lexicographical': {
-			const collator = new Intl.Collator();
-			files.sort((a, b) => collator.compare(a.path, b.path));
-			break;
-		}
-
-		case 'natural': {
-			const collator = new Intl.Collator(undefined, {numeric: true});
-			files.sort((a, b) => collator.compare(a.path, b.path));
-			break;
-		}
-	}
-
-	// Declare common variables
-	const commonVariables: Record<string, any> = {
-		// Data
-		starttime: Date.now(),
-		files,
-
-		// Utilities
-		Path,
-		time: dayjs,
-		uid,
-	};
-
-	// Platform paths
-	for (const name of Object.keys(platformPaths) as (keyof typeof platformPaths)[]) {
-		if (template.includes(name)) commonVariables[name] = await platformPaths[name]();
-	}
-
-	// Find common directory
-	let commondir = files[0]!.dirname;
-	for (let i = 1; i < files.length; i++) commondir = commonPathsRoot(commondir, files[i]!.path);
-	commonVariables.commondir = commondir;
-
-	log(`commondir: ${commondir}`);
-
-	// Build renaming map
-	const newPaths = new Map<string, FileItem>();
-	const existingPaths = new Set<string>();
-	const iPadSize = `${files.length - 1}`.length;
-	const nPadSize = `${files.length}`.length;
-	const lowercaseTemplate = template.toLowerCase();
-	const extractMeta = /(^|\W)meta\s*(\.|\[)/.exec(template) != null;
-	const hashesToSum = (['crc32', 'md5', 'sha1', 'sha256', 'sha512'] as const).filter((type) =>
-		lowercaseTemplate.includes(type)
-	);
-
-	// Populate files with necessary data
-	for (let i = 0; i < files.length; i++) {
-		const file = files[i]!;
-		const {path, isfile} = file;
-		const n = i + 1;
-		file.i = i;
-		file.I = `${i}`.padStart(iPadSize, '0');
-		file.n = n;
-		file.N = `${n}`.padStart(nPadSize, '0');
-		file.offsetI = (amount: number) => `${i + amount}`.padStart(`${files.length - 1 + amount}`.length, '0');
-		file.offsetN = (amount: number) => `${n + amount}`.padStart(`${files.length + amount}`.length, '0');
-
-		// Extract file meta
-		if (extractMeta) {
-			let meta: any = {};
-
-			try {
-				if (!isfile) {
-					output.error(
-						`Your template requests metadata, but you've dropped a directory into the profile without expand directories option enabled, and directories don't have meta data.`
-					);
-					return;
-				}
-				meta = await ffprobe(path, {path: dependencies.ffprobe});
-			} catch (error) {
-				switch (onMissingMeta) {
-					case 'skip':
-						log(`Skipping file "${path}" as its meta couldn't be retrieved: ${eem(error)}`);
-						continue;
-					case 'abort':
-						output.error(`Meta couldn't be retrieved for file "${path}": ${eem(error)}`);
-						return;
-				}
-			}
-
-			if (verbose) log(`Meta for file "${path}":`, meta);
-
-			file.meta =
-				onMissingMeta === 'ignore'
-					? meta
-					: makeUndefinedProxy(meta, {
-							onMissingProp: (prop) => {
-								const ErrorType = onMissingMeta === 'skip' ? SkipError : Error;
-								throw new ErrorType(`Meta property "${prop}" is missing.`);
-							},
-					  });
-		}
-
-		// Compute checksums
-		if (isfile && hashesToSum.length > 0) {
-			for (const type of hashesToSum) {
-				const checksum = await checksumFile(path, type);
-				file[type] = checksum;
-				file[type.toUpperCase() as 'crc32' /*ugh*/] = checksum.toUpperCase();
-			}
-		}
-	}
-
-	// Expand templates
-	for (let i = 0; i < files.length; i++) {
-		const file = files[i]!;
-		// Expose variables to template
-		const {path, dirname} = file;
-		const variables: Record<string, unknown> = {...commonVariables, ...file};
-
-		// Expand the template and create new path
-		let newName: string;
-		try {
-			newName = await sanitizePath(expandTemplateLiteral(template, variables).trim(), {replacement, maxLength});
-		} catch (error) {
-			if (error instanceof SkipError) {
-				log(`Skipping file "${path}": ${error.message}`);
-				continue;
-			}
-			output.error(`Template expansion error: ${eem(error)}`);
-			return;
-		}
-		const newPath = Path.resolve(dirname, newName);
-
-		// File conflict within new file paths
-		if (newPaths.has(newPath)) {
-			const conflictFile = newPaths.get(newPath)!;
-			output.error(
-				`Template would cause these paths:\n\n"${path}"\n"${conflictFile.path}"\n\nto be renamed to a same path:\n\n"${newPath}"`
-			);
-			return;
-		}
-
-		// File conflict with existing files
-		if (!isSamePath(path, newPath) && (await pathExists(newPath))) {
-			existingPaths.add(newPath);
-			if (!overwrite) {
-				output.error(
-					`Path:\n\n"${path}"\n\nwould be renamed to:\n\n"${newPath}"\n\nbut this path already exists.`
-				);
-				return;
-			} else if (files.find((file) => file.path === newPath)) {
-				output.error(
-					`Path:\n\n"${path}"\n\nwould be renamed to:\n\n"${newPath}"\n\nwhich matches current path of one of the other files in batch.`
-				);
-				return;
-			}
-		}
-
-		file.newPath = newPath;
-		newPaths.set(newPath, file);
+	if (errors.length > 0) {
+		const maxErrors = 10;
+		let message = `${errors.length} error${errors.length > 1 ? 's' : ''}:\n\n`;
+		message += errors
+			.slice(0, maxErrors)
+			.map(({inputPath, message}) => `→ "${inputPath}":${divider}\n${message?.message}`)
+			.join('\n\n');
+		if (errors.length > 10) message += `\n\n...truncated ${errors.length - maxErrors} more errors ...`;
+		output.error(message);
+		return;
 	}
 
 	// Actually rename files
@@ -256,63 +36,82 @@ export default async (
 	const dirsToDeleteWhenEmpty = new Set<string>();
 
 	try {
-		log(`Renaming files${simulate ? ' (simulation)' : ''}...`);
+		const renameItems: TmpRenameItem[] = [];
 
-		for (const {path, newPath} of files) {
-			if (!newPath) continue; // Missing newPath means renaming this file should be skipped
-			if (simulate || verbose) log(`-- Renaming: -------\nFrom: "${path}"\n  To: "${newPath}"`);
-			if (simulate) continue;
+		log(`Renaming files to temporary paths...`);
 
-			dirsToDeleteWhenEmpty.add(Path.dirname(path));
+		for (const item of renameTable.items) {
+			if (item.skip) continue;
+			const tmpPath = `${item.inputPath}.tmp${id}`;
+			await FSP.rename(item.inputPath, tmpPath);
+			rewindSteps.push({type: 'rename', from: tmpPath, to: item.inputPath});
+			renameItems.push({...item, tmpPath});
+		}
+
+		log(`Renaming files...${divider}`);
+
+		for (const {inputPath, tmpPath, outputPath} of renameItems) {
+			if (!outputPath) throw new Error(`Missing output path for file: "${inputPath}".`);
+
+			log(` In: "${inputPath}"\nOut: "${outputPath}"${divider}`);
+
+			// Add all folders from input path's directory to common input dir
+			// to be deleted if they are empty after the rename.
+			const commonTargetDiff = Path.dirname(inputPath)
+				.slice(commonInputDir?.length || 0)
+				.replace(/(^[\\\/]+)|([\\\/]+$)/, '');
+			const commonTargetDirs = commonTargetDiff.split(/[\\\/]+/);
+			for (let i = commonTargetDirs.length; i > 0; i--) {
+				const path = Path.join(commonInputDir || '', ...commonTargetDirs.slice(0, i));
+				dirsToDeleteWhenEmpty.add(path);
+			}
 
 			// Backup existing files so the operation can be rewound, and register them up for deletion
-			if (existingPaths.has(newPath)) {
-				const tmpPath = `${newPath}.tmp${uid()}`;
-				rewindSteps.unshift({type: 'rename', from: tmpPath, to: newPath});
-				await FSP.rename(newPath, tmpPath);
+			if (existingPaths.includes(outputPath)) {
+				const tmpPath = `${outputPath}.tmp${uid()}`;
+				rewindSteps.push({type: 'rename', from: tmpPath, to: outputPath});
+				await FSP.rename(outputPath, tmpPath);
 				toDeleteOnSuccess.push(tmpPath);
 			}
 
 			// Ensure destination directory exists
-			const newPathDirname = Path.dirname(newPath);
-			let destinationDirStat = await statIfExists(newPathDirname);
+			const outputPathDirname = Path.dirname(outputPath);
+			let destinationDirStat = await statIfExists(outputPathDirname);
 
 			// If destination directory exists, but is a file, either throw, or
 			// recoverably delete it when overwrite is enabled.
 			if (destinationDirStat?.isFile()) {
-				if (overwrite) {
-					const tmpOldNewPathDirname = `${newPathDirname}.tmp${uid()}`;
-					rewindSteps.unshift({type: 'rename', from: tmpOldNewPathDirname, to: newPathDirname});
-					await FSP.rename(newPathDirname, tmpOldNewPathDirname);
-					toDeleteOnSuccess.push(tmpOldNewPathDirname);
+				if (options.overwrite) {
+					const tmpOldOutputPathDirname = `${outputPathDirname}.tmp${uid()}`;
+					rewindSteps.push({type: 'rename', from: tmpOldOutputPathDirname, to: outputPathDirname});
+					await FSP.rename(outputPathDirname, tmpOldOutputPathDirname);
+					toDeleteOnSuccess.push(tmpOldOutputPathDirname);
 					destinationDirStat = undefined;
 				} else {
 					throw new Error(
-						`Can't rename file:\n"${path}"\nto:\n"${newPath}"\nbecause destination directory is a file, and Overwrite option is disabled.`
+						`Can't rename file:\n"${inputPath}"\nto:\n"${outputPath}"\nbecause destination directory is a file, and Overwrite option is disabled.`
 					);
 				}
 			}
 
 			if (!destinationDirStat) {
-				await FSP.mkdir(newPathDirname, {recursive: true});
-				rewindSteps.unshift({type: 'delete', path: newPathDirname});
+				await FSP.mkdir(outputPathDirname, {recursive: true});
+				rewindSteps.push({type: 'delete', path: outputPathDirname});
 			}
 
 			// Attempt simple rename
 			try {
-				await FSP.rename(path, newPath);
-				rewindSteps.unshift({type: 'rename', from: newPath, to: path});
+				await FSP.rename(tmpPath, outputPath);
+				rewindSteps.push({type: 'rename', from: outputPath, to: tmpPath});
 			} catch (error) {
 				if ((error as any)?.code !== 'EXDEV') throw error;
 
 				// Fallback to moving for cross partition/drive renames
-				rewindSteps.unshift({type: 'delete', path: newPath});
-				await FSP.cp(path, newPath, {recursive: true});
-				toDeleteOnSuccess.push(path);
+				rewindSteps.push({type: 'delete', path: outputPath});
+				await FSP.cp(tmpPath, outputPath, {recursive: true});
+				toDeleteOnSuccess.push(tmpPath);
 			}
 		}
-
-		if (simulate || verbose) log('--------------------');
 
 		// When everything went well, clean up old files
 		if (toDeleteOnSuccess.length > 0) {
@@ -332,19 +131,21 @@ export default async (
 			// Inform about failed cleanups
 			if (failedCleanups.length > 0) {
 				output.warning(
-					`Renaming went well, but these leftover files coulnd't be deleted:\n${failedCleanups.join('\n')}`
+					`Renaming went well, but these leftover files couldn't be deleted:\n${failedCleanups.join('\n')}`
 				);
 			}
 		}
 
 		// Cleanup now empty directories
 		if (dirsToDeleteWhenEmpty.size > 0) {
-			log(`Cleaning up potential empty directories...`);
-			dirsToDeleteWhenEmpty.add(commondir);
+			log(`Cleaning up potential empty directories:`);
+			if (commonInputDir) dirsToDeleteWhenEmpty.add(commonInputDir);
 			const dirsToDeleteWhenEmptyArray = [...dirsToDeleteWhenEmpty];
 
 			// Sort paths from the longest to shortest, which ensures subdirectories get deleted before their parents
 			dirsToDeleteWhenEmptyArray.sort((a, b) => (a.length < b.length ? 1 : a.length > b.length ? -1 : 0));
+
+			log(dirsToDeleteWhenEmptyArray.map((path) => `→ "${path}"`).join('\n'));
 
 			for (const path of dirsToDeleteWhenEmptyArray) {
 				try {
@@ -355,8 +156,9 @@ export default async (
 		}
 
 		// Emit renamed files when requested
-		if (emit) {
-			for (const {newPath} of files) output.file(newPath!);
+		if (options.emit) {
+			log(`Emitting ${renameItems.length} files...`);
+			for (const {outputPath} of renameItems) output.file(outputPath!);
 		}
 	} catch (error) {
 		output.error(eem(error));
@@ -364,7 +166,8 @@ export default async (
 		// Rewind operations
 		log(`Attempting to rewind operations...`);
 
-		for (const step of rewindSteps) {
+		for (let i = rewindSteps.length - 1; i >= 0; i--) {
+			const step = rewindSteps[i]!;
 			switch (step.type) {
 				case 'rename':
 					await FSP.mkdir(Path.dirname(step.to), {recursive: true});

@@ -1,31 +1,27 @@
 {
 	"compilerOptions": {
-		"module": "commonjs",
-		"moduleResolution": "node",
-		"removeComments": true,
+		"allowSyntheticDefaultImports": true,
+		"resolveJsonModule": true,
 		"baseUrl": "src",
 		"paths": {
-			"*": [
-				"*"
-			]
+			"*": ["*"],
+			"manifest": ["../package.json"]
 		},
-		"outDir": "dist",
-		"lib": [
-			"DOM",
-			"DOM.Iterable",
-			"ESNext"
-		],
+		"outDir": "build",
+		"jsx": "react",
+		"jsxFactory": "h",
+		"module": "es2020",
+		"moduleResolution": "node",
+		"lib": ["DOM", "DOM.Iterable", "ESNext"],
 		"newLine": "LF",
 		"strict": true,
 		"noUncheckedIndexedAccess": true,
 		"noUnusedLocals": true,
-		"target": "es2019",
-		"types": [
-			"node"
-		],
-		"sourceMap": false
+		"target": "ES2019",
+		"types": ["node"],
+		"sourceMap": false,
+		"forceConsistentCasingInFileNames": true
 	},
-	"include": [
-		"src"
-	]
+	"include": ["src/**/*.ts", "src/**/*.tsx"],
+	"exclude": ["node_modules"]
 }

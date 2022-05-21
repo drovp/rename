@@ -1,5 +1,3 @@
-## Templates
-
 Templates are JavaScript template literals allowing embedded expressions with access to a lot of useful variables and utilities. Example:
 
 ```

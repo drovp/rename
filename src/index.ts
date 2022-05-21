@@ -5,12 +5,11 @@ type Options = {
 	expandDirectories: boolean;
 	sorting: 'disabled' | 'lexicographical' | 'natural';
 	overwrite: boolean;
+	preview: boolean;
 	emit: boolean;
 	onMissingMeta: 'abort' | 'skip' | 'ignore';
 	replacement: string;
 	maxLength: number;
-	simulate: boolean;
-	verbose: boolean;
 };
 
 const optionsSchema: OptionsSchema<Options> = [
@@ -37,6 +36,16 @@ const optionsSchema: OptionsSchema<Options> = [
 		description: `Overwrite potential destination files.<br>This doesn't apply to conflicts within the current batch. If template generates the same path for two or more files in the current batch, it's still considered an error, and renaming won't happen.`,
 	},
 	{
+		name: 'preview',
+		type: 'boolean',
+		default: false,
+		title: 'Preview',
+		description: `Preview renaming before anything actually gets renamed. Can also be enabled by holding <kbd>${
+			process.platform === 'darwin' ? 'Cmd' : 'Ctrl'
+		}</kbd> when dropping items into a profile.<br>
+		Note: Going through preview enforces <b>On missing meta</b> option to <b>ignore</b>.`,
+	},
+	{
 		name: 'sorting',
 		type: 'select',
 		default: 'disabled',
@@ -58,7 +67,7 @@ const optionsSchema: OptionsSchema<Options> = [
 			ignore: `Ignore, leave values as undefined`,
 		},
 		title: 'On missing meta',
-		description: `What to do when template requires file meta data, but it couldn't be retrieved for any file in a batch.`,
+		description: `What to do when template requires file meta data, but it couldn't be retrieved for any file in a batch.<br>Note: When renaming through preview window, this options is forced to <b>ignore</b>`,
 	},
 	{
 		name: 'replacement',
@@ -85,20 +94,6 @@ const optionsSchema: OptionsSchema<Options> = [
 		title: 'Emit renamed files',
 		description: `Emit renamed files as outputs. This will flood your output boxes on big batches.`,
 	},
-	{
-		name: 'simulate',
-		type: 'boolean',
-		default: false,
-		title: 'Simulate',
-		description: `This will only log what renames would happen, but won't actually execute any file operations.`,
-	},
-	{
-		name: 'verbose',
-		type: 'boolean',
-		default: false,
-		title: 'Verbose',
-		description: `Log every meta object and every rename that is happening, even when not simulating. Will absolutely flood your logs. Only use for debugging and inspecting meta data.`,
-	},
 ];
 
 const acceptsFlags = makeAcceptsFlags<Options>()({
@@ -107,6 +102,10 @@ const acceptsFlags = makeAcceptsFlags<Options>()({
 });
 
 export type Payload = PayloadData<Options, typeof acceptsFlags>;
+export interface PreparatorPayload {
+	payload: Payload;
+	ffprobePath: string;
+}
 
 export default (plugin: Plugin) => {
 	plugin.registerProcessor<Payload>('rename', {
@@ -118,6 +117,21 @@ export default (plugin: Plugin) => {
 		bulk: true,
 		threadType: 'io',
 		options: optionsSchema,
+		operationPreparator: async (payload, utils) => {
+			if (payload.options.preview || process.platform === 'darwin' ? 'meta' : 'ctrl' === utils.modifiers) {
+				const preparatorPayload: PreparatorPayload = {
+					payload,
+					ffprobePath: utils.dependencies.ffprobe as string,
+				};
+				const result = await utils.openModalWindow<Payload>(
+					{path: './dist/preview.html', width: 600, height: 600, minWidth: 420, minHeight: 450},
+					preparatorPayload
+				);
+				return result.canceled ? null : result.payload;
+			} else {
+				return payload;
+			}
+		},
 		expandDirectory: (_, {expandDirectories}) => expandDirectories,
 	});
 };

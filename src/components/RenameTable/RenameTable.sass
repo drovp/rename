@@ -1,0 +1,101 @@
+.RenameTable
+	--inputWidth: 0.5
+
+	> .RenameItem + .RenameItem
+		margin-top: 1px
+
+.RenameItem
+	display: flex
+	align-items: center
+	height: 2.5rem
+	font-family: var(--font-code)
+
+	&:nth-child(even)
+		background: var(--darken-100)
+
+	> .divider
+		flex: 0 0 auto
+		display: flex
+		align-items: center
+		justify-content: center
+		height: 100%
+		width: 1.2rem
+		background: var(--lighten-100)
+		font-size: 1.3em
+		color: var(--muted)
+		cursor: ew-resize
+
+	> .cell
+		display: flex
+		align-items: center
+		gap: var(--spacing-half)
+		min-width: 0
+		padding: 0 var(--spacing-half)
+
+		&.-input
+			flex: var(--inputWidth, 0.5) 1 0
+
+		&.-output
+			flex: calc(1 - var(--inputWidth, 0.5)) 1 0
+
+		&.-success
+			color: var(--success-700)
+
+		&.-danger
+			color: var(--danger-700)
+
+		&.-warning
+			color: var(--warning-700)
+
+		> .path
+			flex: 0 1 auto
+			direction: rtl
+			+ellipsis()
+			+selectable()
+
+		> .showMeta
+			flex: 0 0 auto
+			font-size: 10px
+			+size(18px)
+			border-radius: 99em
+			padding: 0
+			align-items: center
+			justify-content: center
+			flex-flow: row nowrap
+
+		> .showMessage
+			flex: 0 0 auto
+			font-size: 0.9em
+			height: 1.6em
+			margin-left: auto
+
+.ItemMessage
+	--padding: var(--spacing-three-quarters)
+
+.MetaTable
+	> table
+		border-spacing: 0
+		max-width: 100%
+		+selectable()
+
+		tr
+			& + tr
+				margin-top: 5px
+
+			&:nth-child(odd)
+				background: var(--darken-100)
+
+		th
+			font-weight: bold
+			text-align: right
+			border-right: 1px solid var(--grey-z200)
+
+		:is(th, td)
+			padding: var(--spacing-half)
+
+			pre
+				padding: 0
+				margin: 0
+
+		td code
+			overflow-wrap: anywhere
