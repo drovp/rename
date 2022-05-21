@@ -119,7 +119,10 @@ export default (plugin: Plugin) => {
 		threadType: 'io',
 		options: optionsSchema,
 		operationPreparator: async (payload, utils) => {
-			if (payload.options.preview || process.platform === 'darwin' ? 'meta' : 'ctrl' === utils.modifiers) {
+			if (
+				payload.options.preview ||
+				(process.platform === 'darwin' ? ['meta', 'Meta'] : ['ctrl', 'Ctrl']).includes(utils.modifiers)
+			) {
 				const preparatorPayload: PreparatorPayload = {
 					payload,
 					settings: utils.settings,
