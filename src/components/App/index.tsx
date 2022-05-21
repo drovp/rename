@@ -47,6 +47,7 @@ export function App({
 		const {inputs, options} = payload;
 		setIsRenameTableLoading(true);
 		setRenameProgress(0);
+		setRenameError(null);
 		setItemsCategory('items');
 		try {
 			const table = await createRenameTable(
