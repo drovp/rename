@@ -29,12 +29,12 @@
 		"*.md"
 	],
 	"scripts": {
-		"build": "tsc",
-		"watch": "tsc --watch",
-		"clean": "rimraf dist",
-		"start": "npm-run-all clean watch",
+		"build": "gulp build",
+		"watch": "gulp watch",
+		"clean": "gulp clean",
+		"start": "npm-run-all gulp",
 		"test": "tsc -p . --noEmit",
-		"preversion": "npm-run-all clean build",
+		"preversion": "npm-run-all build",
 		"git-push": "git push",
 		"npm-publish": "npm publish",
 		"postversion": "npm-run-all git-push npm-publish"
