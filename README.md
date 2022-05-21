@@ -36,7 +36,19 @@ ${offsetN(10)}${extname}
 Pad a 1 based index with zeroes to a desired target length of 4:
 
 ```
+${padN(4)}${extname}
+```
+
+... which is just a shorthand for:
+
+```
 ${String(n).padStart(4, '0')}${extname}
+```
+
+Pad any value, such as `n` to `4` letters while using underscore to fill gaps:
+
+```
+${pad(n, 4, '_')}${extname}
 ```
 
 ---
