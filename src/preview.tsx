@@ -11,7 +11,17 @@ const container = document.getElementById('app-container')!;
 const INSTRUCTIONS_PATH = Path.resolve(__dirname, '../instructions.md');
 
 window.addEventListener('keydown', (event) => {
-	if (event.key === 'F5') window.location.reload();
+	switch (event.key) {
+		case 'F5':
+			window.location.reload();
+			break;
+
+		case 'F6':
+			const currentTheme = document.documentElement.dataset.theme;
+			document.documentElement.dataset.theme = currentTheme === 'dark' ? 'light' : 'dark';
+			event.preventDefault();
+			break;
+	}
 });
 
 render(<Spinner />, container);

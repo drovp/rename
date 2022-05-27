@@ -83,7 +83,6 @@ export function App({
 	useEventListener<KeyboardEvent>('keydown', (event) => {
 		const scroller = contentScrollerRef.current;
 		const keyId = idKey(event);
-		console.log(keyId);
 
 		switch (keyId) {
 			// Cancel
@@ -92,7 +91,7 @@ export function App({
 				break;
 
 			// Toggle help
-			case `${CTRL_KEY}+/`:
+			case `Alt+/`:
 				setShowInstructions((flag) => !flag);
 				event.preventDefault();
 				break;
@@ -174,7 +173,7 @@ export function App({
 				) : null}
 				<kbd
 					class="shortcutsHelp"
-					title={`Shortcuts:\n${CTRL_OR_CMD}+/: toggle instructions\nAlt+←/→: switch between all/warnings/errors\nAlt+↑/↓: hold to scroll up/down\nAlt+PgUp/PgDown: page up/down\nAlt+Home/End: top top/bottom`}
+					title={`Shortcuts:\nAlt+/: toggle instructions\nAlt+←/→: switch between all/warnings/errors\nAlt+↑/↓: hold to scroll up/down\nAlt+PgUp/PgDown: page up/down\nAlt+Home/End: top top/bottom`}
 				>
 					ℹ
 				</kbd>
@@ -250,6 +249,10 @@ function TemplateControls({
 				break;
 		}
 	});
+
+	useEffect(() => {
+		textareaRef.current?.focus();
+	}, []);
 
 	return (
 		<div class="TemplateControls" ref={controlsRef}>

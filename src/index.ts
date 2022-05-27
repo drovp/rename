@@ -118,6 +118,9 @@ export default (plugin: Plugin) => {
 		bulk: true,
 		threadType: 'io',
 		options: optionsSchema,
+		modifierDescriptions: {
+			Ctrl: `show preview`,
+		},
 		operationPreparator: async (payload, utils) => {
 			if (
 				payload.options.preview ||
