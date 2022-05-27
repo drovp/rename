@@ -5,7 +5,7 @@ import {useState, useEffect, useRef, Ref} from 'preact/hooks';
 import type {PreparatorPayload, Payload} from '../../';
 import {RenameTable as RenameTableData, createRenameTable} from 'lib/rename';
 import {eem, idKey} from 'lib/utils';
-import {ElementScroller} from 'lib/elementScroller';
+import {makeScroller, Scroller} from 'element-scroller';
 import {useEventListener, useElementSize, useScrollPosition, useCachedState} from 'lib/hooks';
 import {Text, Button, Select, SelectOption} from 'components/Inputs';
 import {Spinner} from 'components/Spinner';
@@ -31,7 +31,7 @@ export function App({
 	const {payload, ffprobePath} = preparatorPayload;
 	const textareaRef = useRef<HTMLTextAreaElement>(null);
 	const contentRef = useRef<HTMLDivElement>(null);
-	const contentScrollerRef = useRef<ElementScroller | null>(null);
+	const contentScrollerRef = useRef<Scroller | null>(null);
 	const [showInstructions, setShowInstructions] = useState(false);
 	const [itemsCategory, setItemsCategory] = useState<ItemsCategory>('items');
 	const [renameTable, setRenameTable] = useState<RenameTableData | null>(null);
@@ -70,10 +70,8 @@ export function App({
 
 	// Update content scroller
 	useEffect(() => {
-		contentScrollerRef.current?.destroy();
-		contentScrollerRef.current = contentRef.current
-			? new ElementScroller(contentRef.current, {replaceWheel: true})
-			: null;
+		contentScrollerRef.current?.dispose();
+		contentScrollerRef.current = contentRef.current ? makeScroller(contentRef.current, {handleWheel: true}) : null;
 	}, [showInstructions, isRenameTableLoading, renameError]);
 
 	// Initiations
@@ -85,6 +83,7 @@ export function App({
 	useEventListener<KeyboardEvent>('keydown', (event) => {
 		const scroller = contentScrollerRef.current;
 		const keyId = idKey(event);
+		console.log(keyId);
 
 		switch (keyId) {
 			// Cancel
@@ -122,7 +121,7 @@ export function App({
 			case `Alt+PageDown`:
 				if (scroller) {
 					const height = scroller.element.clientHeight;
-					const scrollAmount = Math.max(height, height - 100);
+					const scrollAmount = Math.max(height * 0.8, height - 100);
 					scroller.scrollBy({top: keyId === `Alt+PageUp` ? -scrollAmount : scrollAmount});
 				}
 				event.preventDefault();
@@ -132,7 +131,8 @@ export function App({
 			case `Alt+ArrowDown`:
 				if (scroller && !event.repeat) {
 					const amount = keyId === `Alt+ArrowUp` ? -600 : 600;
-					addEventListener('keyup', scroller.scroll({top: amount}), {once: true});
+					scroller.glide({top: amount});
+					addEventListener('keyup', scroller.stop, {once: true});
 				}
 				event.preventDefault();
 				break;
