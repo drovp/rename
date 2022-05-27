@@ -1,5 +1,6 @@
 import {Payload} from '../';
 import {promises as FSP} from 'fs';
+import {cpus} from 'os';
 import * as Path from 'path';
 import * as dayjs from 'dayjs';
 import {platformPaths} from 'platform-paths';
@@ -16,6 +17,9 @@ import {
 import {ffprobe} from 'ffprobe-normalized';
 import {checksumFile} from '@tomasklaen/checksum';
 import {expandTemplateLiteral} from 'expand-template-literal';
+import pAll from 'p-all';
+
+const CPUS = cpus().length;
 
 type Meta = {[key: string]: unknown};
 type InternalFile = {
@@ -170,6 +174,8 @@ export async function createRenameTable(
 	let onMissingProp: (name: string) => void = () => {};
 
 	// Populate files with necessary data
+	const metaPromises: (() => Promise<void>)[] = [];
+	let completed = 0;
 	for (let i = 0; i < files.length; i++) {
 		const file = files[i]!;
 		const {path, isfile} = file;
@@ -184,39 +190,44 @@ export async function createRenameTable(
 		file.padN = (length: number, padString = '0') => `${n}`.padStart(length, padString);
 		file.pad = (value: unknown, length: number, padString = '0') => `${value}`.padStart(length, padString);
 
-		// Extract file meta
-		if (extractMeta) {
-			let meta: any = {};
+		// Queue meta data retrieval in async-concurrent manner
+		metaPromises.push(async () => {
+			// Extract file meta
+			if (extractMeta) {
+				let meta: any = {};
 
-			try {
-				if (!isfile) {
-					throw new Error(
-						`Your template requests metadata, but you've dropped a directory into the profile without expand directories option enabled, and directories don't have meta data.`
-					);
+				try {
+					if (!isfile) {
+						throw new Error(
+							`Your template requests metadata, but you've dropped a directory into the profile without expand directories option enabled, and directories don't have meta data.`
+						);
+					}
+					meta = await ffprobe(path, {path: ffprobePath});
+				} catch (error) {
+					if (onMissingMeta === 'abort') {
+						throw new Error(`Meta couldn't be retrieved for file "${path}": ${eem(error)}`);
+					}
 				}
-				meta = await ffprobe(path, {path: ffprobePath});
-			} catch (error) {
-				if (onMissingMeta === 'abort') {
-					throw new Error(`Meta couldn't be retrieved for file "${path}": ${eem(error)}`);
+
+				file.rawMeta = meta;
+				file.meta = makeUndefinedProxy(meta, {onMissingProp: (prop) => onMissingProp(prop)});
+			}
+
+			// Compute checksums
+			if (isfile && hashesToSum.length > 0) {
+				for (const type of hashesToSum) {
+					const checksum = await checksumFile(path, type);
+					file[type] = checksum;
+					file[type.toUpperCase() as 'crc32' /*ugh*/] = checksum.toUpperCase();
 				}
 			}
 
-			file.rawMeta = meta;
-			file.meta = makeUndefinedProxy(meta, {onMissingProp: (prop) => onMissingProp(prop)});
-		}
-
-		// Compute checksums
-		if (isfile && hashesToSum.length > 0) {
-			for (const type of hashesToSum) {
-				const checksum = await checksumFile(path, type);
-				file[type] = checksum;
-				file[type.toUpperCase() as 'crc32' /*ugh*/] = checksum.toUpperCase();
-			}
-		}
-
-		// Update progress here, since this is the slowest possible operation
-		onProgress?.(i / files.length);
+			// Update progress here, since this is the slowest possible operation
+			onProgress?.(++completed / files.length);
+		});
 	}
+
+	await pAll(metaPromises, {concurrency: Math.max(1, Math.floor(CPUS * 0.8))});
 
 	// Expand templates
 	for (let i = 0; i < files.length; i++) {
