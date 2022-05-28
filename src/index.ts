@@ -102,6 +102,9 @@ const acceptsFlags = makeAcceptsFlags<Options>()({
 });
 
 export type Payload = PayloadData<Options, typeof acceptsFlags>;
+export interface Dependencies {
+	ffprobe: string;
+}
 export interface PreparatorPayload {
 	payload: Payload;
 	settings?: AppSettings;

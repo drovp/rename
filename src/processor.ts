@@ -1,5 +1,5 @@
 import type {ProcessorUtils} from '@drovp/types';
-import type {Payload} from './';
+import type {Payload, Dependencies} from './';
 import {promises as FSP} from 'fs';
 import * as Path from 'path';
 import {eem, statIfExists, deletePath, uid} from './lib/utils';
@@ -8,10 +8,7 @@ import {RenameItem, createRenameTable} from './lib/rename';
 type TmpRenameItem = RenameItem & {tmpPath: string};
 const divider = '\n--------------------';
 
-export default async (
-	{id, inputs, options}: Payload,
-	{output, dependencies, log}: ProcessorUtils<{ffprobe: string}>
-) => {
+export default async ({id, inputs, options}: Payload, {output, dependencies, log}: ProcessorUtils<Dependencies>) => {
 	log(`Template:${divider}\n${options.template}${divider}`);
 
 	const renameTable = await createRenameTable(inputs, options, {ffprobePath: dependencies.ffprobe});
