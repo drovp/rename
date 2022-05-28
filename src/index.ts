@@ -43,7 +43,7 @@ const optionsSchema: OptionsSchema<Options> = [
 		default: false,
 		title: 'Preview',
 		description: `Preview renaming before anything actually gets renamed. Can also be enabled by holding <kbd>${
-			process.platform === 'darwin' ? 'Cmd' : 'Ctrl'
+			process.platform === 'darwin' ? 'Alt' : 'Ctrl'
 		}</kbd> when dropping items into a profile.<br>
 		Note: Going through preview enforces <b>On missing meta</b> option to <b>ignore</b>.`,
 	},
