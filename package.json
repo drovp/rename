@@ -32,7 +32,7 @@
 		"build": "gulp build",
 		"watch": "gulp watch",
 		"clean": "gulp clean",
-		"start": "npm-run-all gulp",
+		"start": "gulp",
 		"test": "tsc -p . --noEmit",
 		"preversion": "npm-run-all build",
 		"git-push": "git push",
