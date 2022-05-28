@@ -259,9 +259,9 @@ function TemplateControls({
 			<Text
 				innerRef={textareaRef}
 				rows={2}
-				responsiveRows={3}
 				transparent
 				resizable
+				autoResize
 				value={template}
 				onChange={setTemplate}
 			/>

@@ -6,11 +6,13 @@
 	--border-focus: var(--grey-z600)
 	--rows: 1
 	--min-height: 0
+	--content-height: 0
+	--max-auto-size: 15em
 	position: relative
 	display: inline-block
 	max-width: 100%
 	min-height: var(--input-height)
-	height: max(calc((var(--rows) * 1.5em) + 1em), min(var(--min-height), 50vh))
+	height: max(calc((var(--rows) * 1.5em) + 1em), min(var(--min-height), 50vh), min(var(--content-height), var(--max-auto-size)))
 
 	@each $variant in $variants
 		&.-#{$variant}
@@ -31,6 +33,7 @@
 		background: var(--background)
 		border-radius: var(--border-radius)
 		border: 1px solid var(--border)
+		overflow-y: scroll
 		$tran: 300ms $out-expo
 		transition: color $tran, background $tran, transform $tran
 
@@ -67,3 +70,14 @@
 
 		&:is(:focus ~ *):after
 			background: var(--border-focus)
+
+// Used to calculate height of the content
+.MockTextarea
+	display: block
+	+fixed(200vh _ _ 0)
+	height: 0
+	padding: .6em
+	font-family: var(--font-code)
+	tab-size: 2
+	border: 1px solid transparent
+	overflow: hidden

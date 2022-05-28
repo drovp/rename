@@ -1,6 +1,6 @@
 import {h} from 'preact';
-import {useRef, Ref, useState, useMemo} from 'preact/hooks';
-import {insertAtCursor, TargetedEvent, clamp} from 'lib/utils';
+import {useRef, Ref, useState} from 'preact/hooks';
+import {insertAtCursor, TargetedEvent} from 'lib/utils';
 
 export interface TextProps {
 	id?: string;
@@ -15,7 +15,11 @@ export interface TextProps {
 	min?: number;
 	max?: number;
 	rows?: number;
-	responsiveRows?: number;
+	/**
+	 * Textarea resizes itself to accommodate text itself up to a
+	 * --max-auto-size CSS value.
+	 */
+	autoResize?: boolean;
 	onChange?: (value: string) => void;
 	onClick?: (event: TargetedEvent<HTMLTextAreaElement, MouseEvent>) => void;
 	onKeyDown?: (event: TargetedEvent<HTMLTextAreaElement, KeyboardEvent>) => void;
@@ -35,8 +39,8 @@ export function Text({
 	resizable = true,
 	min,
 	max,
-	rows: requestedRows = 2,
-	responsiveRows = 0,
+	rows,
+	autoResize = true,
 	transparent,
 	onChange,
 	disabled,
@@ -45,12 +49,10 @@ export function Text({
 }: TextProps) {
 	const textareaRef = innerRef || useRef<HTMLTextAreaElement>(null);
 	const [minHeight, setMinHeight] = useState(0);
-	const initialRows = useMemo(() => calculateRows(value, requestedRows, responsiveRows), []);
-	const [rows, setRows] = useState(initialRows);
+	const [contentHeight, setContentHeight] = useState(0);
 
 	function handleInput(event: TargetedEvent<HTMLTextAreaElement, Event>) {
 		const value = event.currentTarget.value;
-		setRows(calculateRows(value, requestedRows, responsiveRows));
 		onChange?.(value);
 	}
 
@@ -84,13 +86,53 @@ export function Text({
 		window.addEventListener('mouseup', cancel);
 	}
 
+	/**
+	 * Calculates content height
+	 */
+	function handleFocus() {
+		const textarea = textareaRef.current;
+		if (!textarea || !autoResize) return;
+
+		const mockArea = document.createElement('textarea');
+		const computedStyle = getComputedStyle(textarea);
+		Array.from(computedStyle).forEach((key) =>
+			mockArea.style.setProperty(key, computedStyle.getPropertyValue(key), computedStyle.getPropertyPriority(key))
+		);
+		Object.assign(mockArea.style, {
+			width: `${textarea.offsetWidth}px`,
+			height: '0',
+			overflow: 'hidden',
+			position: 'fixed',
+			right: '200vw',
+		});
+		document.body.appendChild(mockArea);
+
+		const handleInput = () => {
+			mockArea.value = textarea.value;
+			setContentHeight(mockArea.scrollHeight + 2);
+		};
+
+		const handleBlur = () => {
+			textarea.removeEventListener('input', handleInput);
+			textarea.removeEventListener('blur', handleBlur);
+			mockArea.remove();
+		};
+
+		textarea.addEventListener('input', handleInput);
+		textarea.addEventListener('blur', handleBlur);
+		handleInput();
+	}
+
 	let classNames = `Text`;
 	if (className) classNames += ` ${className}`;
 	if (variant) classNames += ` -${variant}`;
 	if (transparent) classNames += ' -transparent';
 
 	return (
-		<div class={classNames} style={`--rows:${rows};--min-height:${minHeight}px;`}>
+		<div
+			class={classNames}
+			style={`--rows:${rows};--min-height:${minHeight}px;--content-height:${contentHeight}px`}
+		>
 			<textarea
 				{...rest}
 				id={id}
@@ -101,6 +143,7 @@ export function Text({
 				maxLength={max}
 				spellcheck={spellcheck === true}
 				onInput={handleInput}
+				onFocus={handleFocus}
 				disabled={disabled}
 				onKeyDown={(event) => {
 					handleKeyDown(event);
@@ -111,9 +154,4 @@ export function Text({
 			{resizable && <div class="resize-handle" onMouseDown={initResize} />}
 		</div>
 	);
-}
-
-function calculateRows(value: string | number | null | undefined, rows: number, responsiveRows: number) {
-	const lines = `${value}`.split(/\r?\n/).length;
-	return clamp(rows, lines, rows + responsiveRows);
 }
