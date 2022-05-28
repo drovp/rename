@@ -1,5 +1,7 @@
 import {Plugin, PayloadData, OptionsSchema, makeAcceptsFlags, AppSettings} from '@drovp/types';
 
+const isMac = process.platform === 'darwin';
+
 type Options = {
 	template: string;
 	expandDirectories: boolean;
@@ -122,13 +124,10 @@ export default (plugin: Plugin) => {
 		threadType: 'io',
 		options: optionsSchema,
 		modifierDescriptions: {
-			Ctrl: `show preview`,
+			[isMac ? 'Alt' : 'Ctrl']: `show preview/tweaking window before renaming`,
 		},
 		operationPreparator: async (payload, utils) => {
-			if (
-				payload.options.preview ||
-				(process.platform === 'darwin' ? ['meta', 'Meta'] : ['ctrl', 'Ctrl']).includes(utils.modifiers)
-			) {
+			if (payload.options.preview || (isMac ? ['alt', 'Alt'] : ['ctrl', 'Ctrl']).includes(utils.modifiers)) {
 				const preparatorPayload: PreparatorPayload = {
 					payload,
 					settings: utils.settings,
