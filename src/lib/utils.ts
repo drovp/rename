@@ -158,10 +158,19 @@ export function sanitizePath(value: string, options: {maxLength?: number; replac
 	for (let i = 0; i < sourceParts.length; i++) {
 		const part = sourceParts[i]!;
 
-		// Drive letter
-		if (i === 0 && part.match(/^\w+\:$/) != null) {
-			resultParts.push(part);
-			continue;
+		// Special handling for path roots
+		if (i === 0) {
+			// Windows drive letter
+			if (isWindows && part.match(/^\w+\:$/) != null) {
+				resultParts.push(part);
+				continue;
+			}
+
+			// Re-introduce root /
+			if (part === '') {
+				resultParts.push(Path.sep);
+				continue;
+			}
 		}
 
 		resultParts.push(filenamify(part, options));
