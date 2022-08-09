@@ -2,7 +2,7 @@ import {Payload} from '../';
 import {promises as FSP} from 'fs';
 import {cpus} from 'os';
 import * as Path from 'path';
-import * as dayjs from 'dayjs';
+import dayjs from 'dayjs';
 import {platformPaths} from 'platform-paths';
 import {
 	eem,
