@@ -1,6 +1,7 @@
 import {h, RenderableProps, VNode} from 'preact';
 import {Ref, useState, useRef, useLayoutEffect} from 'preact/hooks';
 import {throttle, debounce} from 'lib/utils';
+import {useCache, CACHE_IGNORE_KEY} from 'lib/hooks';
 import {observeElementSize} from 'lib/elementSize';
 import {Scrollable} from 'components/Scrollable';
 
@@ -13,6 +14,8 @@ export type VirtualListProps<T extends unknown> = RenderableProps<{
 	innerRef?: Ref<HTMLDivElement | null>;
 	items: T[];
 	reversed?: boolean;
+	/** Define to remember and restore scroll position. */
+	scrollPositionId?: string;
 	render: (item: T, index: number) => VNode;
 }>;
 
@@ -23,14 +26,17 @@ export function VirtualList<T extends unknown = unknown>({
 	style: passedStyle = '',
 	direction = 'vertical',
 	reversed,
+	scrollPositionId,
 	innerRef,
 }: VirtualListProps<T>) {
 	const containerRef = innerRef || useRef<HTMLDivElement>(null);
 	// Initial dimensions are designed to initially render multiple items so that
 	// we can retrieve the real dimensions and spacings.
 	const [rawSpacing, setRawSpacing] = useState<number | null>(null);
-	const [pos, setPos] = useState(0);
+	const [scrollPosition, setScrollPosition] = useCache(scrollPositionId || CACHE_IGNORE_KEY, 0);
+	const [pos, setPos] = useState(scrollPosition);
 	const [viewSize, setViewSize] = useState(10);
+	const [isInitialized, setIsInitialized] = useState(false);
 	const isHorizontal = direction === 'horizontal';
 	const spacing = rawSpacing || viewSize / 10;
 	const renderCount = min(ceil(viewSize / spacing) + 1, items.length);
@@ -56,8 +62,12 @@ export function VirtualList<T extends unknown = unknown>({
 		const handleViewResize = throttle(() =>
 			setViewSize(Math.max(container[isHorizontal ? 'clientWidth' : 'clientHeight'], 1))
 		);
-		const handleScroll = () => setPos(container[isHorizontal ? 'scrollLeft' : 'scrollTop']);
-		const handleItemResize = throttle(() => {
+		const handleScroll = () => {
+			const pos = container[isHorizontal ? 'scrollLeft' : 'scrollTop'];
+			if (scrollPositionId) setScrollPosition(pos);
+			setPos(pos);
+		};
+		const updateRawSpacing = () => {
 			const item1 = container.children[1];
 			const item2 = container.children[2];
 
@@ -67,11 +77,13 @@ export function VirtualList<T extends unknown = unknown>({
 				const rect2 = item2.getBoundingClientRect();
 				setRawSpacing(isHorizontal ? rect2.left - rect1.left : rect2.top - rect1.top);
 			}
-		});
+		};
+		const handleItemResize = throttle(updateRawSpacing);
 		const handleMutation = debounce(() => {
 			itemResizeDisposer();
 			const firstRealChild = container.children[1];
 			if (container.children.length >= 3 && firstRealChild) itemResizeDisposer.reconnect(firstRealChild);
+			setIsInitialized(true);
 		});
 
 		const viewResizeDisposer = observeElementSize(container, handleViewResize);
@@ -81,7 +93,8 @@ export function VirtualList<T extends unknown = unknown>({
 		mutationObserver.observe(container, {childList: true});
 		container.addEventListener('scroll', handleScroll);
 
-		// Initial mutations
+		// Initial initialization
+		updateRawSpacing();
 		handleMutation();
 		handleMutation.flush();
 
@@ -94,6 +107,14 @@ export function VirtualList<T extends unknown = unknown>({
 			container.removeEventListener('scroll', handleScroll);
 		};
 	}, []);
+
+	// Restore scroll position when requested
+	useLayoutEffect(() => {
+		const container = containerRef.current;
+		if (isInitialized && container && scrollPosition !== 0) {
+			container[isHorizontal ? 'scrollLeft' : 'scrollTop'] = scrollPosition;
+		}
+	}, [isInitialized]);
 
 	return (
 		<Scrollable class={className} style={style} direction={direction} innerRef={containerRef}>

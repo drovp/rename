@@ -4,7 +4,7 @@ Templates are JavaScript template literals allowing embedded expressions with ac
 ${filename}_suffix.${ext}
 ```
 
-If template is a relative path (doesn't start with `/` or a drive letter), it'll be resolved from the file's current directory. This means you don't have to prepend it in every template, and can use `../` to move files up in directory tree, `foo/...` to move them into a new one, and combination of both.
+If template is a relative path (doesn't start with `/` or a drive letter), it'll be resolved from the file's current directory. This means you can use `../` to move files up in directory tree, `foo/...` to move them into a new one, and a combination of both.
 
 If template moves file into a directory that doesn't exist, it'll be created.
 

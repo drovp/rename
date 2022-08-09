@@ -42,7 +42,6 @@
 	"devDependencies": {
 		"@drovp/types": "^4.7.1",
 		"@drovp/utils": "^2.0.2",
-		"@oddbird/blend": "^0.2.3",
 		"@tomasklaen/checksum": "^1.1.0",
 		"@types/marked": "^4.0.3",
 		"dayjs": "^1.11.4",
@@ -60,7 +59,9 @@
 		"npm-run-all": "^4.1.5",
 		"p-all": "^4.0.0",
 		"platform-paths": "^1.2.2",
+		"postcss-declarations": "^1.0.0",
 		"postcss-preset-env": "^7.6.0",
+		"postcss-prune-var": "^1.0.4",
 		"tslib": "^2.4.0",
 		"typescript": "^4.7.2"
 	}

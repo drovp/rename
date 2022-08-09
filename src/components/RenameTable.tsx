@@ -4,22 +4,27 @@ import {h} from 'preact';
 import {useRef, useState, useEffect, Ref} from 'preact/hooks';
 import {RenameTable as RenameTableData, RenameItem as RenameItemData} from 'lib/rename';
 import {clamp} from 'lib/utils';
-import {useScrollPosition} from 'lib/hooks';
 import {VirtualList} from 'components/VirtualList';
 import {Scrollable} from 'components/Scrollable';
-import {Button} from 'components/Inputs';
+import {Button} from 'components/Button';
 import {Pre} from 'components/Pre';
+import {Icon} from 'components/Icon';
 import {openDialog} from 'components/Dialog';
 
 const variantTypeTitle = {warning: 'Warning', danger: 'Error'};
 
 export type ItemsCategory = 'items' | 'errors' | 'warnings';
+export const ITEM_CATEGORIES: ItemsCategory[] = ['items', 'errors', 'warnings'];
+
+export function isItemsCategory(name: any): name is ItemsCategory {
+	return ITEM_CATEGORIES.includes(name);
+}
 
 export function RenameTable({
 	innerRef,
 	data,
 	category = 'items',
-	scrollPositionId = 'items',
+	scrollPositionId,
 }: {
 	innerRef?: Ref<HTMLDivElement | null>;
 	data: RenameTableData;
@@ -28,8 +33,6 @@ export function RenameTable({
 }) {
 	const containerRef = innerRef || useRef<HTMLDivElement>(null);
 	const [inputWidth, setInputWidth] = useState(0.5);
-
-	if (scrollPositionId) useScrollPosition(`${scrollPositionId}.${category}`, containerRef, {delay: 60});
 
 	useEffect(() => {
 		const container = containerRef.current;
@@ -63,6 +66,7 @@ export function RenameTable({
 			class="RenameTable"
 			style={`--inputWidth:${inputWidth}`}
 			items={data[category]}
+			scrollPositionId={scrollPositionId}
 			render={(item: RenameItemData) => <RenameItem key={item.inputPath} data={data} item={item} />}
 		/>
 	);
@@ -139,7 +143,7 @@ export function RenameItem({item, data}: {item: RenameItemData; data: RenameTabl
 						onClick={() => showDialog('message')}
 						tooltip="Show message"
 					>
-						{variantTypeTitle[item.message.variant]}
+						<Icon name={'error'} />
 					</Button>
 				)}
 			</div>

@@ -11,15 +11,14 @@
 		+size(83.333%)
 		display: block
 		animation: Spinner-rotate 500ms infinite linear
-		border: 0.15em solid currentColor
+		color: var(--variant-z700)
+		border: max(calc(var(--size) / 14), 1px) solid currentColor
 		border-right-color: transparent
 		border-left-color: transparent
 		border-radius: 50%
-		opacity: .5
 
-	@each $variant in $variants
-		&.-#{$variant}
-			color: var(--#{$variant}-z700)
+	&.-frozen::after
+		animation: none
 
 @keyframes Spinner-rotate
 	0%

@@ -2,20 +2,25 @@ import {promises as FSP} from 'fs';
 import {h} from 'preact';
 import {marked} from 'marked';
 import {useState, useEffect, useRef, Ref} from 'preact/hooks';
-import type {PreparatorPayload, Payload} from '../../';
+import type {PreparatorPayload, Payload} from '../';
 import {RenameTable as RenameTableData, createRenameTable} from 'lib/rename';
-import {eem, idKey} from 'lib/utils';
+import {eem, idKey, idModifiers} from 'lib/utils';
 import {makeScroller, Scroller} from 'element-scroller';
 import {useEventListener, useElementSize, useScrollPosition, useCachedState} from 'lib/hooks';
-import {Text, Button, Select, SelectOption} from 'components/Inputs';
+import {Textarea} from 'components/Textarea';
+import {Button} from 'components/Button';
+import {Select, SelectOption} from 'components/Select';
 import {Spinner} from 'components/Spinner';
+import {Icon, Help} from 'components/Icon';
 import {Vacant} from 'components/Vacant';
 import {Scrollable} from 'components/Scrollable';
-import {RenameTable, ItemsCategory} from 'components/RenameTable';
+import {RenameTable, ItemsCategory, isItemsCategory} from 'components/RenameTable';
 import {Tag} from 'components/Tag';
 
 const CTRL_OR_CMD = process.platform === 'darwin' ? 'Cmd' : 'Ctrl';
-const CTRL_KEY = process.platform === 'darwin' ? 'Meta' : 'Ctrl';
+const CTRL_OR_META = process.platform === 'darwin' ? 'Meta' : 'Ctrl';
+
+type SectionName = ItemsCategory | 'instructions';
 
 export function App({
 	preparatorPayload,
@@ -32,8 +37,8 @@ export function App({
 	const textareaRef = useRef<HTMLTextAreaElement>(null);
 	const contentRef = useRef<HTMLDivElement>(null);
 	const contentScrollerRef = useRef<Scroller | null>(null);
-	const [showInstructions, setShowInstructions] = useState(false);
-	const [itemsCategory, setItemsCategory] = useState<ItemsCategory>('items');
+	const [section, setSection] = useState<SectionName>('items');
+	const [lastItemsCategory, setLastItemsCategory] = useState<ItemsCategory>('items');
 	const [renameTable, setRenameTable] = useState<RenameTableData | null>(null);
 	const [isRenameTableLoading, setIsRenameTableLoading] = useState(false);
 	const [renameProgress, setRenameProgress] = useState(0);
@@ -48,7 +53,7 @@ export function App({
 		setIsRenameTableLoading(true);
 		setRenameProgress(0);
 		setRenameError(null);
-		setItemsCategory('items');
+		setSection('items');
 		try {
 			const table = await createRenameTable(
 				inputs,
@@ -64,6 +69,11 @@ export function App({
 		}
 	}
 
+	function changeSection(name: SectionName) {
+		if (isItemsCategory(name)) setLastItemsCategory(name);
+		setSection(name);
+	}
+
 	function handleSubmit(template: string) {
 		if (renameTable && !hasErrors) onSubmit({...payload, options: {...payload.options, template}});
 	}
@@ -72,9 +82,9 @@ export function App({
 	useEffect(() => {
 		contentScrollerRef.current?.dispose();
 		contentScrollerRef.current = contentRef.current ? makeScroller(contentRef.current, {handleWheel: true}) : null;
-	}, [showInstructions, isRenameTableLoading, renameError]);
+	}, [section, isRenameTableLoading, renameError]);
 
-	// Initiations
+	// Initial load
 	useEffect(() => {
 		updateRenameTable(payload.options.template);
 		textareaRef.current?.focus();
@@ -83,16 +93,18 @@ export function App({
 	useEventListener<KeyboardEvent>('keydown', (event) => {
 		const scroller = contentScrollerRef.current;
 		const keyId = idKey(event);
+		const modifiers = idModifiers(event);
 
 		switch (keyId) {
 			// Cancel
-			case 'Escape':
+			case `${CTRL_OR_META}+Escape`:
 				onCancel();
 				break;
 
 			// Toggle help
 			case `Alt+/`:
-				setShowInstructions((flag) => !flag);
+				if (isItemsCategory(section)) changeSection('instructions');
+				else changeSection(lastItemsCategory);
 				event.preventDefault();
 				break;
 
@@ -100,11 +112,11 @@ export function App({
 			case `Alt+ArrowLeft`:
 			case `Alt+ArrowRight`:
 				if (renameTable) {
-					const categories = ['items', 'warnings', 'errors'] as const;
-					const currentIndex = categories.indexOf(itemsCategory);
+					const categories = ['items', 'warnings', 'errors', 'instructions'] as const;
+					const currentIndex = categories.indexOf(section);
 					const bumpedIndex = currentIndex + (keyId === `Alt+ArrowLeft` ? -1 : 1);
 					const index = bumpedIndex < 0 ? categories.length + bumpedIndex : bumpedIndex % categories.length;
-					setItemsCategory(categories[index]!);
+					changeSection(categories[index]!);
 				}
 				event.preventDefault();
 				break;
@@ -136,79 +148,92 @@ export function App({
 				event.preventDefault();
 				break;
 		}
+
+		// Refocus textarea when normal key is pressed while it's not already focused
+		if (modifiers === '' && event.key.length === 1 && document.activeElement !== textareaRef.current) {
+			textareaRef.current?.focus();
+			event.preventDefault();
+		}
 	});
 
 	return (
 		<div class="App">
 			<TemplateControls
 				template={payload.options.template}
+				textareaRef={textareaRef}
 				isRenameTableLoading={isRenameTableLoading}
 				onUpdate={updateRenameTable}
 				onSubmit={handleSubmit}
 				hasErrors={hasErrors}
 			/>
 
-			<div class="legend">
-				{renameTable != null ? (
+			<nav>
+				{isRenameTableLoading ? (
+					<em>Building rename table...</em>
+				) : (
 					<Select
+						class="categories"
 						transparent
-						value={itemsCategory}
-						onChange={(category) => setItemsCategory(category as ItemsCategory)}
+						value={section}
+						onChange={(category) => changeSection(category as ItemsCategory)}
 					>
 						<SelectOption value="items">
-							All <Tag>{renameTable.items.length}</Tag>
+							All {renameTable && <Tag>{renameTable.items.length}</Tag>}
 						</SelectOption>
 						<SelectOption
 							value="warnings"
-							variant={renameTable.warnings.length > 0 ? 'warning' : undefined}
+							variant={renameTable?.warnings.length !== 0 ? 'warning' : undefined}
 						>
-							Warnings <Tag>{renameTable.warnings.length}</Tag>
+							Warnings {renameTable && <Tag>{renameTable.warnings.length}</Tag>}
 						</SelectOption>
-						<SelectOption value="errors" variant={renameTable.errors.length > 0 ? 'danger' : undefined}>
-							Errors <Tag>{renameTable.errors.length}</Tag>
+						<SelectOption value="errors" variant={renameTable?.errors.length !== 0 ? 'danger' : undefined}>
+							Errors {renameTable && <Tag>{renameTable.errors.length}</Tag>}
 						</SelectOption>
 					</Select>
-				) : isRenameTableLoading ? (
-					<em>Building rename table...</em>
-				) : null}
-				<kbd
-					class="shortcutsHelp"
-					title={`Shortcuts:\nAlt+/: toggle instructions\nAlt+←/→: switch between all/warnings/errors\nAlt+↑/↓: hold to scroll up/down\nAlt+PgUp/PgDown: page up/down\nAlt+Home/End: top top/bottom`}
-				>
-					ℹ
-				</kbd>
-				<button
-					class={`instructionsToggle${showInstructions ? ' -active' : ''}`}
-					onClick={() => setShowInstructions((flag) => !flag)}
-					title="Show instructions"
-				>
-					<span>Instructions</span>
-				</button>
-			</div>
+				)}
 
-			{showInstructions ? (
+				<Help
+					tooltip={`Shortcuts:
+Alt+/: toggle instructions
+Alt+←/→: cycle between sections
+Alt+↑/↓: hold to scroll up/down
+Alt+PgUp/PgDown: page up/down
+Alt+Home/End: top top/bottom
+${CTRL_OR_CMD}+Escape: cancel/close window`}
+				/>
+
+				<Select transparent value={section} onChange={(category) => changeSection(category as SectionName)}>
+					<SelectOption value="instructions">
+						<Icon name="article" /> Instructions
+					</SelectOption>
+				</Select>
+			</nav>
+
+			{section === 'instructions' ? (
 				<MarkdownFile
+					key={section}
 					innerRef={contentRef}
 					class="Instructions"
 					path={instructionsPath}
 					scrollPositionId="instructions"
 				/>
 			) : isRenameTableLoading ? (
-				<div class="loading">
+				<div key="loading" class="loading">
 					<div class="progress">{Math.round(renameProgress * 100)}%</div>
 					<Spinner />
 				</div>
 			) : renameError ? (
-				<Vacant variant="danger" title="Error" details={renameError} />
+				<Vacant key="vacant" variant="danger" title="Error" details={renameError} />
 			) : renameTable ? (
 				<RenameTable
+					key={section}
 					innerRef={contentRef}
 					data={renameTable}
-					category={itemsCategory}
-					scrollPositionId="RenameTable"
+					category={section}
+					scrollPositionId={`RenameTable.${section}`}
 				/>
 			) : (
-				<Vacant variant="danger" title="Error">
+				<Vacant key="vacant" variant="danger" title="Error">
 					RenameTable is {`${renameTable}`}.
 				</Vacant>
 			)}
@@ -217,6 +242,7 @@ export function App({
 }
 
 function TemplateControls({
+	textareaRef,
 	template: passedTemplate,
 	onUpdate,
 	onSubmit,
@@ -224,13 +250,14 @@ function TemplateControls({
 	hasErrors,
 }: {
 	template: string;
+	textareaRef: Ref<HTMLTextAreaElement | null>;
 	isRenameTableLoading: boolean;
 	onUpdate: (template: string) => void;
 	onSubmit: (template: string) => void;
 	hasErrors: boolean;
 }) {
 	const controlsRef = useRef<HTMLDivElement>(null);
-	const textareaRef = useRef<HTMLTextAreaElement>(null);
+	textareaRef = textareaRef || useRef<HTMLTextAreaElement>(null);
 	const [, controlsHeight] = useElementSize(controlsRef);
 	const [template, setTemplate] = useState(passedTemplate);
 
@@ -243,7 +270,7 @@ function TemplateControls({
 				break;
 
 			// Submit
-			case `${CTRL_KEY}+Enter`:
+			case `${CTRL_OR_META}+Enter`:
 				if (!isRenameTableLoading && !hasErrors) onSubmit(template);
 				event.preventDefault();
 				break;
@@ -256,7 +283,7 @@ function TemplateControls({
 
 	return (
 		<div class="TemplateControls" ref={controlsRef}>
-			<Text
+			<Textarea
 				innerRef={textareaRef}
 				rows={2}
 				transparent
@@ -323,7 +350,7 @@ function MarkdownFile({
 
 	if (scrollPositionId) useScrollPosition(scrollPositionId, containerRef);
 
-	let classNames = `MarkdownFile`;
+	let classNames = `MarkdownFile TextContent`;
 	if (className) classNames += ` ${className}`;
 
 	return (

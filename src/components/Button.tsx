@@ -13,6 +13,7 @@ interface ButtonBaseProps {
 	underline?: boolean;
 	dashed?: boolean;
 	transparent?: boolean;
+	selected?: boolean;
 	muted?: boolean; // muted color for non hover/active state
 	loading?: boolean;
 	large?: boolean;
@@ -54,6 +55,7 @@ export function Button({
 	muted,
 	children,
 	loading,
+	selected,
 	innerRef,
 	tooltip,
 	onClick,
@@ -69,6 +71,7 @@ export function Button({
 	if (semitransparent) classNames += ' -semitransparent';
 	if (transparent) classNames += ' -transparent';
 	if (muted) classNames += ' -muted';
+	if (selected) classNames += ' -selected';
 	if (loading) classNames += ' -loading';
 	if (outline) classNames += ' -outline';
 	if (underline) classNames += ' -underline';
@@ -84,11 +87,11 @@ export function Button({
 	// fucking text flowing content... `vertical-align: middle` is a bad joke!
 	if (children) {
 		if (typeof children === 'string') {
-			children = <span>{children.trim()}</span>;
+			children = <span class="txt">{children.trim()}</span>;
 		} else if (Array.isArray(children)) {
 			for (let i = 0; i < children.length; i++) {
 				const content = children[i];
-				if (typeof content === 'string') children[i] = <span>{content.trim()}</span>;
+				if (typeof content === 'string') children[i] = <span class="txt">{content.trim()}</span>;
 			}
 		}
 	}

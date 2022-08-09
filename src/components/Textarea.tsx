@@ -2,7 +2,7 @@ import {h} from 'preact';
 import {useRef, Ref, useState} from 'preact/hooks';
 import {insertAtCursor, TargetedEvent} from 'lib/utils';
 
-export interface TextProps {
+export interface TextareaProps {
 	id?: string;
 	name?: string;
 	placeholder?: string;
@@ -16,7 +16,7 @@ export interface TextProps {
 	max?: number;
 	rows?: number;
 	/**
-	 * Textarea resizes itself to accommodate text itself up to a
+	 * Textarea resizes itself to accommodate text inside up to the
 	 * --max-auto-size CSS value.
 	 */
 	autoResize?: boolean;
@@ -28,7 +28,7 @@ export interface TextProps {
 	innerRef?: Ref<HTMLTextAreaElement | null>;
 }
 
-export function Text({
+export function Textarea({
 	id,
 	name,
 	placeholder,
@@ -46,14 +46,13 @@ export function Text({
 	disabled,
 	innerRef,
 	...rest
-}: TextProps) {
+}: TextareaProps) {
+	const containerRef = useRef<HTMLDivElement>(null);
 	const textareaRef = innerRef || useRef<HTMLTextAreaElement>(null);
 	const [minHeight, setMinHeight] = useState(0);
-	const [contentHeight, setContentHeight] = useState(0);
 
 	function handleInput(event: TargetedEvent<HTMLTextAreaElement, Event>) {
-		const value = event.currentTarget.value;
-		onChange?.(value);
+		onChange?.(event.currentTarget.value);
 	}
 
 	function handleKeyDown(event: KeyboardEvent) {
@@ -108,8 +107,11 @@ export function Text({
 		document.body.appendChild(mockArea);
 
 		const handleInput = () => {
-			mockArea.value = textarea.value;
-			setContentHeight(mockArea.scrollHeight + 2);
+			const container = containerRef.current;
+			if (container) {
+				mockArea.value = textarea.value;
+				container.style.setProperty('--content-height', `${mockArea.scrollHeight + 2}px`);
+			}
 		};
 
 		const handleBlur = () => {
@@ -123,16 +125,13 @@ export function Text({
 		handleInput();
 	}
 
-	let classNames = `Text`;
+	let classNames = `Textarea`;
 	if (className) classNames += ` ${className}`;
 	if (variant) classNames += ` -${variant}`;
 	if (transparent) classNames += ' -transparent';
 
 	return (
-		<div
-			class={classNames}
-			style={`--rows:${rows};--min-height:${minHeight}px;--content-height:${contentHeight}px`}
-		>
+		<div ref={containerRef} class={classNames} style={`--rows:${rows};--min-height:${minHeight}px`}>
 			<textarea
 				{...rest}
 				id={id}

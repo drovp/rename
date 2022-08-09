@@ -1,26 +1,22 @@
-.Text
-	--color: var(--fg)
-	--color-transparent: var(--fg)
-	--background: var(--darken)
-	--border: var(--grey-z300)
-	--border-focus: var(--grey-z600)
+.Textarea
 	--rows: 1
 	--min-height: 0
-	--content-height: 0
+	--content-height: 0px
 	--max-auto-size: 15em
 	position: relative
 	display: inline-block
 	max-width: 100%
 	min-height: var(--input-height)
 	height: max(calc((var(--rows) * 1.5em) + 1em), min(var(--min-height), 50vh), min(var(--content-height), var(--max-auto-size)))
+	background: var(--darken)
+	border-radius: var(--border-radius)
+	border: 1px solid var(--variant-z300)
+	$tran: 300ms linear
+	transition: color $tran, background $tran
 
-	@each $variant in $variants
-		&.-#{$variant}
-			--color: var(--#{$variant}-z900)
-			--color-transparent: var(--#{$variant}-z700)
-			--background: var(--#{$variant}-o200)
-			--border: var(--#{$variant}-z400)
-			--border-focus: var(--#{$variant}-z600)
+	&.-transparent
+		background: transparent
+		border: 0
 
 	> textarea
 		display: block
@@ -29,29 +25,23 @@
 		resize: none
 		font-family: var(--font-code)
 		tab-size: 2
-		color: var(--color)
-		background: var(--background)
-		border-radius: var(--border-radius)
-		border: 1px solid var(--border)
-		overflow-y: scroll
-		$tran: 300ms $out-expo
-		transition: color $tran, background $tran, transform $tran
+		color: var(--color, var(--variant-z900))
+		background: transparent
+		border: 0
 
 		&:focus
-			border-color: var(--border-focus)
+			border-color: var(--variant-z600)
 
 		&::placeholder
 			color: var(--muted)
 
 		&:is(.-transparent > *)
-			color: var(--color-transparent)
-			background: transparent
-			border: 0
+			color: var(--color, var(--variant-z700))
 
 		&[disabled]
 			filter: grayscale(50%)
 			opacity: .5
-			@extend %disabled-stripes
+			+disabledStripes()
 
 	> .resize-handle
 		--size: 10px
@@ -65,11 +55,11 @@
 			content: ''
 			+size(100% 4px)
 			+absolute(calc(50% - 2px) _ _ 0)
-			background: var(--border)
+			background: var(--variant-z400)
 			border-radius: 2px
 
 		&:is(:focus ~ *):after
-			background: var(--border-focus)
+			background: var(--variant-z600)
 
 // Used to calculate height of the content
 .MockTextarea
@@ -79,5 +69,5 @@
 	padding: .6em
 	font-family: var(--font-code)
 	tab-size: 2
-	border: 1px solid transparent
+	border: 0
 	overflow: hidden

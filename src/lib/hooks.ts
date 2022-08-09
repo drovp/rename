@@ -141,22 +141,37 @@ export function useScrollPosition(id: string, ref: Ref<HTMLElement | null>, {del
  * expiration timeout.
  *
  * ```
- * const [value, setValue] = useCachedState('cache.value.identifier', 'default value');
+ * const [value, setValue] = useCache('cache.value.identifier', 'default value');
+ * ```
+ *
+ * In case where key can be undefined (optional), use `CACHE_IGNORE_KEY`.
+ * This will always return the default value, with a noop setter.
+ *
+ * ```
+ * const [value, setValue] = useCache(key || CACHE_IGNORE_KEY, 'default');
  * ```
  */
 export function useCache<T>(key: unknown, defaultValue: T, timeout?: number): [T, (value: T) => void] {
-	return [
-		(CACHE.has(key) ? CACHE.get(key)!.value : defaultValue) as T,
-		(value: T, timeoutOverride?: number) => {
-			const old = CACHE.get(key);
-			if (old?.timeoutId != null) clearTimeout(old.timeoutId);
-			const requestedTimeout = timeoutOverride ?? timeout;
-			const timeoutId = requestedTimeout ? setTimeout(() => CACHE.delete(key), requestedTimeout) : null;
-			CACHE.set(key, {timeoutId, value});
-		},
-	];
+	return key === CACHE_IGNORE_KEY
+		? [defaultValue, () => {}]
+		: [
+				(CACHE.has(key) ? CACHE.get(key)!.value : defaultValue) as T,
+				useCallback(
+					(value: T, timeoutOverride?: number) => {
+						const old = CACHE.get(key);
+						if (old?.timeoutId != null) clearTimeout(old.timeoutId);
+						const requestedTimeout = timeoutOverride ?? timeout;
+						const timeoutId = requestedTimeout
+							? setTimeout(() => CACHE.delete(key), requestedTimeout)
+							: null;
+						CACHE.set(key, {timeoutId, value});
+					},
+					[key]
+				),
+		  ];
 }
 
+export const CACHE_IGNORE_KEY = Symbol('cache_ignore');
 const CACHE = new Map<any, {timeoutId: ReturnType<typeof setTimeout> | null; value: unknown}>();
 const CACHE_SUBS = new Map<unknown, Set<() => void>>();
 
