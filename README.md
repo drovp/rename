@@ -88,19 +88,19 @@ _Uses `ffprobe` to retrive the meta, which considerably slows down renaming._
 Prepend time when renaming started to each filename:
 
 ```
-${time(starttime).format('YYYY-MM-DD-HH.mm.ss')}-${basename}
+${Time(starttime).format('YYYY-MM-DD-HH.mm.ss')}-${basename}
 ```
 
 Prepend file's creation time to each filename:
 
 ```
-${time(birthtime).format('YYYY-MM-DD-HH.mm.ss')}-${basename}
+${Time(birthtime).format('YYYY-MM-DD-HH.mm.ss')}-${basename}
 ```
 
 Serialize and prepend current seconds since unix epoch:
 
 ```
-${time(starttime).unix()} ${N}${basename}
+${Time(starttime).unix()} ${N}${basename}
 ```
 
 ---

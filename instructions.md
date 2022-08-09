@@ -39,35 +39,36 @@ You can split long templates with new lines, they'll be removed before template 
 **`padI(length: number, padStr? = '0')`** \
 — pad `i` to a `length` using `padStr` (default `0`) to fill gaps\
 **`padN(length: number, padStr? = '0')`** \
-— pad `n` to a `length` using `padStr` (default `0`) to fill gaps\
-**`pad(value: any, length: number, padStr? = '0')`** \
-— pad `value` to a `length` using `padStr` (default `0`) to fill gaps
+— pad `n` to a `length` using `padStr` (default `0`) to fill gaps
 
 _\* These number are automatically padded with zeroes when necessary. If batch is between 1-9 files, there's no padding, if batch is between 10-99 files, 0-9 numbers are padded with 1 zero, etc..._
 
 ### Common variables for all files
 
-**`commondir`** - common directory of all dropped files in current batch\
-**`starttime`** - time when renaming started in unix epoch milliseconds\
-**`files[]`** - an array of all files in current batch to access data from files other than current one. Useful to access data for first, last, previous, or next file in batch.\
-Access with `${files[i].basename}`.
+**`commondir`** - directory common to all dropped files in current batch\
+**`starttime`** - operation start time in unix epoch milliseconds\
+**`files[]`** - an array of all files in current batch. Useful to access data for first, last, previous, or next file in batch.\
+Example `${files[i].basename}`.
 
 Platform folders:\
 **`tmp`**, **`home`**, **`downloads`**, **`documents`**, **`pictures`**, **`music`**, **`videos`**, **`desktop`**
 
 ### Meta
 
-Templates for media files can also access their meta data via `${meta.property}`. Available properties:
+Media files can access their meta via `${meta.property}`. Available properties:
 
 ```
 title, artist, track, genre, year, language, codec, container, channels, framerate, width, height
 ```
 
+But be careful, depending on input file, these properties are not guaranteed to be defined.
+
 ### Utilities
 
+**`pad(value: any, length: number, padStr? = '0')`** — pad `value` to a `length` using `padStr` (default `0`) to fill gaps
 **`Path`** - Reference to [Node.js' `path` module](https://nodejs.org/api/path.html). Example: `${Path.relative(foo, bar)}`\
-**`time()`** - [day.js](https://day.js.org/docs/en/display/format) util to help with time. Example: `${time().format('YY')}`\
-**`uid(size? = 10)`** - Unique string generator. Size is optional, default is 10. This is a faster alternative to generating file checksums when uniqueness is all that is desired. Example: `${uid()}`
+**`Time()`** - [day.js](https://day.js.org/docs/en/display/format) util to help with time. Example: `${Time().format('YY')}`\
+**`uid(size? = 10)`** - Unique string generator. Size is optional, default is 10. This is a faster alternative to generating file checksums when uniqueness is all that is desired. Example: `${ui()}`
 
 ### Examples
 
@@ -83,10 +84,10 @@ Offset the 1 based index by 10 and automatically pad it with `offsetN()` util:
 ${offsetN(10)}${extname}
 ```
 
-Pad a 1 based index with zeroes to a desired target length of 4:
+Pad a 1 based index `n` with zeroes to a desired target length of 4:
 
 ```
-${padN(4)}${extname}
+${pad(n, 4)}${extname}
 ```
 
 ... which is just a shorthand for:
@@ -95,7 +96,7 @@ ${padN(4)}${extname}
 ${String(n).padStart(4, '0')}${extname}
 ```
 
-Pad any value, such as `n` to `4` letters while using underscore to fill gaps:
+Pad `n` to `4` letters while using underscore to fill gaps:
 
 ```
 ${pad(n, 4, '_')}${extname}
@@ -135,22 +136,22 @@ _Uses `ffprobe` to retrive the meta, which considerably slows down renaming._
 
 ---
 
-Prepend time when renaming started to each filename:
+Prepend operation start time to each filename:
 
 ```
-${time(starttime).format('YYYY-MM-DD-HH.mm.ss')}-${basename}
+${Time(starttime).format('YYYY-MM-DD-HH.mm.ss')}-${basename}
 ```
 
 Prepend file's creation time to each filename:
 
 ```
-${time(birthtime).format('YYYY-MM-DD-HH.mm.ss')}-${basename}
+${Time(birthtime).format('YYYY-MM-DD-HH.mm.ss')}-${basename}
 ```
 
 Serialize and prepend current seconds since unix epoch:
 
 ```
-${time(starttime).unix()} ${N}${basename}
+${Time(starttime).unix()} ${N}${basename}
 ```
 
 ---
@@ -189,7 +190,7 @@ ${Path.relative(commondir, dirname).replace(/[\\\/\:]+/g, '-')}
 
 _(Big templates can be split into multiple lines to help with making sense of them. New lines will be removed in the final filename.)_
 
-Useful if you want to just throw a single directory into a profile with directory expansion enabled, and have it flatten all of the files inside it.
+Useful if you want to just throw a single directory into a profile with directory expansion enabled, and have it flatten all of the files inside.
 
 If you drop in directory `/foo` with this structure:
 

@@ -45,7 +45,7 @@
 		"@oddbird/blend": "^0.2.3",
 		"@tomasklaen/checksum": "^1.1.0",
 		"@types/marked": "^4.0.3",
-		"dayjs": "^1.11.2",
+		"dayjs": "^1.11.4",
 		"del": "^6.1.1",
 		"element-scroller": "^1.0.1",
 		"esbuild": "^0.14.40",

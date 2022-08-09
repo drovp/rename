@@ -145,7 +145,7 @@ export async function createRenameTable(
 
 		// Utilities
 		Path,
-		time: dayjs,
+		Time: dayjs,
 		uid,
 	};
 
