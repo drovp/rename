@@ -111,6 +111,7 @@ export interface PreparatorPayload {
 	payload: Payload;
 	settings?: AppSettings;
 	ffprobePath: string;
+	dataPath: string;
 }
 
 export default (plugin: Plugin) => {
@@ -132,6 +133,7 @@ export default (plugin: Plugin) => {
 					payload,
 					settings: utils.settings,
 					ffprobePath: utils.dependencies.ffprobe as string,
+					dataPath: utils.dataPath,
 				};
 				const result = await utils.openModalWindow<Payload>(
 					{path: './dist/preview.html', width: 600, height: 600, minWidth: 420, minHeight: 450},

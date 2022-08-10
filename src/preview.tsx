@@ -4,6 +4,7 @@ import {h, render} from 'preact';
 import {getPayload, resolve} from '@drovp/utils/modal-window';
 import {eem, isOfType, uid} from 'lib/utils';
 import {PreparatorPayload} from './';
+import {HISTORY_FILE} from 'config';
 import {App} from 'components/App';
 import {Spinner} from 'components/Spinner';
 import {Vacant} from 'components/Vacant';
@@ -68,6 +69,7 @@ getPayload<PreparatorPayload>()
 			<App
 				preparatorPayload={payload}
 				instructionsPath={INSTRUCTIONS_PATH}
+				historyPath={Path.join(payload.dataPath, HISTORY_FILE)}
 				onSubmit={(payload) => resolve(payload)}
 				onCancel={() => window.close()}
 			/>,

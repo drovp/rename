@@ -1,0 +1,24 @@
+.History
+	padding: var(--spacing-half)
+
+	> button
+		appearance: none
+		display: block
+		width: 100%
+		padding: var(--spacing)
+		text-align: left
+		background: transparent
+		border-radius: var(--border-radius)
+		border-top: 1px dotted transparent
+		overflow: hidden
+
+		&:not(.-selected, :hover, .-selected + *, :hover + *, :first-child)
+			border-color: var(--grey-z300)
+			border-radius: 0
+
+		&:hover
+			background: var(--grey-z250)
+
+		&.-selected
+			color: var(--grey-z0)
+			background: var(--grey-z700)

@@ -3,6 +3,7 @@ import {h} from 'preact';
 import {marked} from 'marked';
 import {useState, useEffect, useRef, Ref} from 'preact/hooks';
 import type {PreparatorPayload, Payload} from '../';
+import {HISTORY_SIZE} from 'config';
 import {RenameTable as RenameTableData, createRenameTable} from 'lib/rename';
 import {eem, idKey, idModifiers} from 'lib/utils';
 import {makeScroller, Scroller} from 'element-scroller';
@@ -14,32 +15,37 @@ import {Spinner} from 'components/Spinner';
 import {Icon, Help} from 'components/Icon';
 import {Vacant} from 'components/Vacant';
 import {Scrollable} from 'components/Scrollable';
+import {History} from 'components/History';
 import {RenameTable, ItemsCategory, isItemsCategory} from 'components/RenameTable';
 import {Tag} from 'components/Tag';
 
 const CTRL_OR_CMD = process.platform === 'darwin' ? 'Cmd' : 'Ctrl';
 const CTRL_OR_META = process.platform === 'darwin' ? 'Meta' : 'Ctrl';
 
-type SectionName = ItemsCategory | 'instructions';
+type SectionName = ItemsCategory | 'history' | 'instructions';
 
 export function App({
 	preparatorPayload,
 	instructionsPath,
+	historyPath,
 	onSubmit,
 	onCancel,
 }: {
 	preparatorPayload: PreparatorPayload;
 	instructionsPath: string;
+	historyPath: string;
 	onSubmit: (payload: Payload) => void;
 	onCancel: () => void;
 }) {
 	const {payload, ffprobePath} = preparatorPayload;
+	const [template, setTemplate] = useState(payload.options.template);
 	const textareaRef = useRef<HTMLTextAreaElement>(null);
 	const contentRef = useRef<HTMLDivElement>(null);
 	const contentScrollerRef = useRef<Scroller | null>(null);
 	const [section, setSection] = useState<SectionName>('items');
 	const [lastItemsCategory, setLastItemsCategory] = useState<ItemsCategory>('items');
 	const [renameTable, setRenameTable] = useState<RenameTableData | null>(null);
+	const [history, setHistory] = useState<string[]>([]);
 	const [isRenameTableLoading, setIsRenameTableLoading] = useState(false);
 	const [renameProgress, setRenameProgress] = useState(0);
 	const [renameError, setRenameError] = useState<string | null>(null);
@@ -74,8 +80,38 @@ export function App({
 		setSection(name);
 	}
 
-	function handleSubmit(template: string) {
-		if (renameTable && !hasErrors) onSubmit({...payload, options: {...payload.options, template}});
+	function selectHistory(value: string) {
+		// Simulate immediate input so that textarea resizes itself properly
+		const textarea = textareaRef.current;
+		if (textarea) {
+			textarea.focus();
+			textarea.value = value;
+			textarea.dispatchEvent(new Event('input'));
+		}
+
+		setTemplate(value);
+		changeSection('items');
+		updateRenameTable(value);
+	}
+
+	async function handleSubmit(template: string) {
+		if (!renameTable || hasErrors) return;
+
+		const oldTemplate = payload.options.template;
+		const newTemplate = template.trim();
+		if (newTemplate !== oldTemplate) {
+			let newHistory = [newTemplate, ...history.filter((template) => template !== newTemplate)].slice(
+				0,
+				HISTORY_SIZE
+			);
+			const historyJson = JSON.stringify(newHistory, null, 2);
+			try {
+				await FSP.writeFile(historyPath, historyJson);
+			} catch (error) {
+				console.error(`Couldn't save history file "${historyPath}".`, error);
+			}
+		}
+		onSubmit({...payload, options: {...payload.options, template}});
 	}
 
 	// Update content scroller
@@ -88,6 +124,22 @@ export function App({
 	useEffect(() => {
 		updateRenameTable(payload.options.template);
 		textareaRef.current?.focus();
+
+		// Load history
+		(async () => {
+			try {
+				const json = await FSP.readFile(historyPath, {encoding: 'utf-8'});
+				const data = JSON.parse(json);
+				// Validate
+				if (Array.isArray(data) && data.findIndex((item) => typeof item !== 'string') === -1) {
+					setHistory(data);
+				}
+			} catch (error) {
+				if ((error as any)?.code !== 'ENOENT') {
+					console.error('Error loading history file:', historyPath, error);
+				}
+			}
+		})();
 	}, []);
 
 	useEventListener<KeyboardEvent>('keydown', (event) => {
@@ -101,96 +153,97 @@ export function App({
 				onCancel();
 				break;
 
+			// Toggle history
+			case `Alt+h`:
+				event.preventDefault();
+				if (section !== 'history') changeSection('history');
+				else changeSection(lastItemsCategory);
+				break;
+
 			// Toggle help
 			case `Alt+/`:
-				if (isItemsCategory(section)) changeSection('instructions');
-				else changeSection(lastItemsCategory);
 				event.preventDefault();
+				if (section !== 'instructions') changeSection('instructions');
+				else changeSection(lastItemsCategory);
 				break;
 
 			// Switch between item categories
 			case `Alt+ArrowLeft`:
 			case `Alt+ArrowRight`:
+				event.preventDefault();
 				if (renameTable) {
-					const categories = ['items', 'warnings', 'errors', 'instructions'] as const;
+					const categories = ['items', 'warnings', 'errors', 'history', 'instructions'] as const;
 					const currentIndex = categories.indexOf(section);
 					const bumpedIndex = currentIndex + (keyId === `Alt+ArrowLeft` ? -1 : 1);
 					const index = bumpedIndex < 0 ? categories.length + bumpedIndex : bumpedIndex % categories.length;
 					changeSection(categories[index]!);
 				}
-				event.preventDefault();
 				break;
 
 			// Content navigation
 			case `Alt+Home`:
 			case `Alt+End`:
-				scroller?.scrollTo({top: keyId === `Alt+End` ? Infinity : 0});
 				event.preventDefault();
+				scroller?.scrollTo({top: keyId === `Alt+End` ? Infinity : 0});
 				break;
 
 			case `Alt+PageUp`:
 			case `Alt+PageDown`:
+				event.preventDefault();
 				if (scroller) {
 					const height = scroller.element.clientHeight;
 					const scrollAmount = Math.max(height * 0.8, height - 100);
 					scroller.scrollBy({top: keyId === `Alt+PageUp` ? -scrollAmount : scrollAmount});
 				}
-				event.preventDefault();
 				break;
 
 			case `Alt+ArrowUp`:
 			case `Alt+ArrowDown`:
+				event.preventDefault();
 				if (scroller && !event.repeat) {
 					const amount = keyId === `Alt+ArrowUp` ? -600 : 600;
 					scroller.glide({top: amount});
 					addEventListener('keyup', scroller.stop, {once: true});
 				}
-				event.preventDefault();
 				break;
 		}
 
 		// Refocus textarea when normal key is pressed while it's not already focused
 		if (modifiers === '' && event.key.length === 1 && document.activeElement !== textareaRef.current) {
-			textareaRef.current?.focus();
 			event.preventDefault();
+			textareaRef.current?.focus();
 		}
 	});
 
 	return (
 		<div class="App">
 			<TemplateControls
-				template={payload.options.template}
+				template={template}
 				textareaRef={textareaRef}
 				isRenameTableLoading={isRenameTableLoading}
+				onChange={setTemplate}
 				onUpdate={updateRenameTable}
 				onSubmit={handleSubmit}
 				hasErrors={hasErrors}
 			/>
 
 			<nav>
-				{isRenameTableLoading ? (
-					<em>Building rename table...</em>
-				) : (
-					<Select
-						class="categories"
-						transparent
-						value={section}
-						onChange={(category) => changeSection(category as ItemsCategory)}
-					>
-						<SelectOption value="items">
-							All {renameTable && <Tag>{renameTable.items.length}</Tag>}
-						</SelectOption>
-						<SelectOption
-							value="warnings"
-							variant={renameTable?.warnings.length !== 0 ? 'warning' : undefined}
-						>
-							Warnings {renameTable && <Tag>{renameTable.warnings.length}</Tag>}
-						</SelectOption>
-						<SelectOption value="errors" variant={renameTable?.errors.length !== 0 ? 'danger' : undefined}>
-							Errors {renameTable && <Tag>{renameTable.errors.length}</Tag>}
-						</SelectOption>
-					</Select>
-				)}
+				<Select
+					class="categories"
+					transparent
+					value={section}
+					onChange={(category) => changeSection(category as ItemsCategory)}
+				>
+					<SelectOption value="items">
+						All {renameTable && <Tag>{renameTable.items.length}</Tag>}
+					</SelectOption>
+					<SelectOption value="warnings" variant={renameTable?.warnings.length !== 0 ? 'warning' : undefined}>
+						Warnings {renameTable && <Tag>{renameTable.warnings.length}</Tag>}
+					</SelectOption>
+					<SelectOption value="errors" variant={renameTable?.errors.length !== 0 ? 'danger' : undefined}>
+						Errors {renameTable && <Tag>{renameTable.errors.length}</Tag>}
+					</SelectOption>
+				</Select>
 
 				<Help
 					tooltip={`Shortcuts:
@@ -203,6 +256,9 @@ ${CTRL_OR_CMD}+Escape: cancel/close window`}
 				/>
 
 				<Select transparent value={section} onChange={(category) => changeSection(category as SectionName)}>
+					<SelectOption value="history" tooltip="History of custom templates used">
+						<Icon name="history" /> History
+					</SelectOption>
 					<SelectOption value="instructions">
 						<Icon name="article" /> Instructions
 					</SelectOption>
@@ -217,6 +273,8 @@ ${CTRL_OR_CMD}+Escape: cancel/close window`}
 					path={instructionsPath}
 					scrollPositionId="instructions"
 				/>
+			) : section === 'history' ? (
+				<History key={section} history={history} onSelect={selectHistory} />
 			) : isRenameTableLoading ? (
 				<div key="loading" class="loading">
 					<div class="progress">{Math.round(renameProgress * 100)}%</div>
@@ -243,7 +301,8 @@ ${CTRL_OR_CMD}+Escape: cancel/close window`}
 
 function TemplateControls({
 	textareaRef,
-	template: passedTemplate,
+	template,
+	onChange,
 	onUpdate,
 	onSubmit,
 	isRenameTableLoading,
@@ -252,6 +311,7 @@ function TemplateControls({
 	template: string;
 	textareaRef: Ref<HTMLTextAreaElement | null>;
 	isRenameTableLoading: boolean;
+	onChange: (template: string) => void;
 	onUpdate: (template: string) => void;
 	onSubmit: (template: string) => void;
 	hasErrors: boolean;
@@ -259,7 +319,6 @@ function TemplateControls({
 	const controlsRef = useRef<HTMLDivElement>(null);
 	textareaRef = textareaRef || useRef<HTMLTextAreaElement>(null);
 	const [, controlsHeight] = useElementSize(controlsRef);
-	const [template, setTemplate] = useState(passedTemplate);
 
 	useEventListener<KeyboardEvent>('keydown', (event) => {
 		switch (idKey(event)) {
@@ -290,7 +349,7 @@ function TemplateControls({
 				resizable
 				autoResize
 				value={template}
-				onChange={setTemplate}
+				onChange={onChange}
 			/>
 			<div class={`actions${controlsHeight && controlsHeight > 110 ? ' -column' : ''}`}>
 				<Button

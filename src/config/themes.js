@@ -31,14 +31,12 @@ function themeVariant({name, hue = 0, chroma = 0, min = 100, max = 900, step = 5
 	return vars;
 }
 
-themeVariant({name: 'success', hue: 130, chroma: 40});
-
 module.exports = {
 	lightTheme: {
 		'--brand': '#a767fa',
 		'--fg': 'var(--grey-100)',
 		'--variant-fg': 'var(--grey-1000)',
-		'--bg': new Color('lch', [100 - 17.5, 0, 0]).toString({format: 'hex'}),
+		'--bg': new Color('lch', [100 - 17.5, 1, 250]).toString({format: 'hex'}),
 		'--bg-darker': 'var(--grey-z200)',
 		'--bg-lighter': 'var(--grey-z150)',
 		'--curtain': '#fff8',
@@ -70,7 +68,7 @@ module.exports = {
 		'--muted-50:': 'rgba(0, 0, 0, .05)',
 		'--muted': 'var(--muted-500)',
 
-		...themeVariant({name: 'grey', min: 0, max: 1000, flipZ: true}),
+		...themeVariant({name: 'grey', hue: 250, chroma: 4, min: 0, max: 1000, flipZ: true}),
 		...themeVariant({name: 'accent', hue: 300, chroma: 40, flipZ: true}),
 		...themeVariant({name: 'success', hue: 130, chroma: 40, flipZ: true}),
 		...themeVariant({name: 'info', hue: 240, chroma: 40, flipZ: true}),
@@ -81,7 +79,7 @@ module.exports = {
 		'--brand': '#B882FF',
 		'--fg': 'var(--grey-900)',
 		'--variant-fg': 'var(--grey-1000)',
-		'--bg': new Color('lch', [17.5, 0, 0]).toString({format: 'hex'}),
+		'--bg': new Color('lch', [17.5, 1, 250]).toString({format: 'hex'}),
 		'--bg-darker': 'var(--grey-z150)',
 		'--bg-lighter': 'var(--grey-z200)',
 		'--curtain': '#0008',
@@ -113,7 +111,7 @@ module.exports = {
 		'--muted-50': 'rgba(255, 255, 255, .05)',
 		'--muted': 'var(--muted-500)',
 
-		...themeVariant({name: 'grey', min: 0, max: 1000}),
+		...themeVariant({name: 'grey', hue: 250, chroma: 2, min: 0, max: 1000}),
 		...themeVariant({name: 'accent', hue: 300, chroma: 40}),
 		...themeVariant({name: 'success', hue: 130, chroma: 40}),
 		...themeVariant({name: 'info', hue: 240, chroma: 40}),

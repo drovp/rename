@@ -49,6 +49,9 @@
 		textarea
 			outline: none
 
+			&:is([data-theme=dark] *)
+				text-shadow: 1px 1px 0 var(--darken-900)
+
 	> .actions
 		flex: 0 0 auto
 		display: flex
