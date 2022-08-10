@@ -27,25 +27,25 @@ Serialize all dropped files with automatically padded 1 based index:
 ${N}${extname}
 ```
 
-Offset the 1 based index by 10 and automatically pad it with `offsetN()` util:
+Offset the 1 based index by 10 and pad it to length of `4` with `pad()` util:
 
 ```
-${offsetN(10)}${extname}
-```
-
-Pad a 1 based index with zeroes to a desired target length of 4:
-
-```
-${padN(4)}${extname}
+${pad(n + 10, 4)}${extname}
 ```
 
 ... which is just a shorthand for:
 
 ```
-${String(n).padStart(4, '0')}${extname}
+${String(n + 10).padStart(4, '0')}${extname}
 ```
 
-Pad any value, such as `n` to `4` letters while using underscore to fill gaps:
+Offset and determine pad length based on max index:
+
+```
+${pad(n + 10, String(files.length).length)}${extname}
+```
+
+Pad `n` to `4` letters while using underscore to fill gaps:
 
 ```
 ${pad(n, 4, '_')}${extname}
@@ -85,7 +85,7 @@ _Uses `ffprobe` to retrive the meta, which considerably slows down renaming._
 
 ---
 
-Prepend time when renaming started to each filename:
+Prepend operation start time to each filename:
 
 ```
 ${Time(starttime).format('YYYY-MM-DD-HH.mm.ss')}-${basename}
@@ -139,7 +139,7 @@ ${Path.relative(commondir, dirname).replace(/[\\\/\:]+/g, '-')}
 
 _(Big templates can be split into multiple lines to help with making sense of them. New lines will be removed in the final filename.)_
 
-Useful if you want to just throw a single directory into a profile with directory expansion enabled, and have it flatten all of the files inside it.
+Useful if you want to just throw a single directory into a profile with directory expansion enabled, and have it flatten all of the files inside.
 
 If you drop in directory `/foo` with this structure:
 
