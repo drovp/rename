@@ -24,24 +24,16 @@ You can split long templates with new lines, they'll be removed before template 
 **`mtime`** - last modification time in unix epoch milliseconds\
 **`ctime`** - last status change time (permission, rename, ...) in unix epoch milliseconds\
 **`birthtime`** - file creation time in unix epoch milliseconds\
-**`isfile`** - boolean if item is a file\
-**`isdirectory`** - boolean if item is a directory\
+**`isfile`** - boolean of item being a file\
+**`isdirectory`** - boolean of item being a directory\
 **`crc32,md5,sha1,sha256,sha512`** - lowercase file checksums\
 **`CRC32,MD5,SHA1,SHA256,SHA512`** - uppercase file checksums\
 **`i`** - 0 based index in current batch\
-**`I`** - 0 based index automatically padded for the current batch\
+**`I`** - 0 based index automatically padded for the current batch \*\
 **`n`** - 1 based index in current batch\
-**`N`** - 1 based index automatically padded for the current batch\
-**`offsetI(amount: number)`** \
-— offset `i` by `amount` and automatically pad it\
-**`offsetN(amount: number)`** \
-— offset `n` by `amount` and automatically pad it\
-**`padI(length: number, padStr? = '0')`** \
-— pad `i` to a `length` using `padStr` (default `0`) to fill gaps\
-**`padN(length: number, padStr? = '0')`** \
-— pad `n` to a `length` using `padStr` (default `0`) to fill gaps
+**`N`** - 1 based index automatically padded for the current batch \*
 
-_\* These number are automatically padded with zeroes when necessary. If batch is between 1-9 files, there's no padding, if batch is between 10-99 files, 0-9 numbers are padded with 1 zero, etc..._
+_\* These numbers are automatically padded with zeroes when necessary. If batch is between 1-9 files, there's no padding, if batch is between 10-99 files, 0-9 numbers are padded with 1 zero, etc..._
 
 ### Common variables for all files
 
@@ -50,8 +42,11 @@ _\* These number are automatically padded with zeroes when necessary. If batch i
 **`files[]`** - an array of all files in current batch. Useful to access data for first, last, previous, or next file in batch.\
 Example `${files[i].basename}`.
 
-Platform folders:\
-**`tmp`**, **`home`**, **`downloads`**, **`documents`**, **`pictures`**, **`music`**, **`videos`**, **`desktop`**
+Platform folders:
+
+```
+tmp, home, downloads, documents, pictures, music, videos, desktop
+```
 
 ### Meta
 
@@ -65,10 +60,39 @@ But be careful, depending on input file, these properties are not guaranteed to 
 
 ### Utilities
 
-**`pad(value: any, length: number, padStr? = '0')`** — pad `value` to a `length` using `padStr` (default `0`) to fill gaps
-**`Path`** - Reference to [Node.js' `path` module](https://nodejs.org/api/path.html). Example: `${Path.relative(foo, bar)}`\
-**`Time()`** - [day.js](https://day.js.org/docs/en/display/format) util to help with time. Example: `${Time().format('YY')}`\
-**`uid(size? = 10)`** - Unique string generator. Size is optional, default is 10. This is a faster alternative to generating file checksums when uniqueness is all that is desired. Example: `${ui()}`
+---
+
+#### **`pad(value: any, length: number, padStr? = '0')`**
+
+Pad `value` to a `length` using `padStr` (default `0`) to fill gaps.
+
+Example: `pad(n, 4)`
+
+---
+
+#### **`Path`**
+
+Reference to [Node.js' `path` module](https://nodejs.org/api/path.html).
+
+Example: `${Path.relative(foo, bar)}`
+
+---
+
+#### **`Time()`**
+
+[day.js](https://day.js.org/docs/en/display/format) util to help with time.
+
+Example: `${Time().format('YY')}`
+
+---
+
+#### **`uid(size? = 10)`**
+
+Unique string generator. Size is optional, default is 10. This is a faster alternative to generating file checksums when uniqueness is all that is desired.
+
+Example: `${uid()}`
+
+---
 
 ### Examples
 
@@ -78,22 +102,22 @@ Serialize all dropped files with automatically padded 1 based index:
 ${N}${extname}
 ```
 
-Offset the 1 based index by 10 and automatically pad it with `offsetN()` util:
+Offset the 1 based index by 10 and pad it to length of `4` with `pad()` util:
 
 ```
-${offsetN(10)}${extname}
-```
-
-Pad a 1 based index `n` with zeroes to a desired target length of 4:
-
-```
-${pad(n, 4)}${extname}
+${pad(n + 10, 4)}${extname}
 ```
 
 ... which is just a shorthand for:
 
 ```
-${String(n).padStart(4, '0')}${extname}
+${String(n + 10).padStart(4, '0')}${extname}
+```
+
+Offset and determine pad length based on max index:
+
+```
+${pad(n + 10, String(files.length).length)}${extname}
 ```
 
 Pad `n` to `4` letters while using underscore to fill gaps:

@@ -184,10 +184,6 @@ export async function createRenameTable(
 		file.I = `${i}`.padStart(iPadSize, '0');
 		file.n = n;
 		file.N = `${n}`.padStart(nPadSize, '0');
-		file.offsetI = (amount: number) => `${i + amount}`.padStart(`${files.length - 1 + amount}`.length, '0');
-		file.offsetN = (amount: number) => `${n + amount}`.padStart(`${files.length + amount}`.length, '0');
-		file.padI = (length: number, padString = '0') => `${i}`.padStart(length, padString);
-		file.padN = (length: number, padString = '0') => `${n}`.padStart(length, padString);
 		file.pad = (value: unknown, length: number, padString = '0') => `${value}`.padStart(length, padString);
 
 		// Queue meta data retrieval in async-concurrent manner
