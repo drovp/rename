@@ -154,46 +154,46 @@ export function App({
 				break;
 
 			// Toggle history
-			case `Alt+h`:
+			case `${CTRL_OR_META}+h`:
 				event.preventDefault();
 				if (section !== 'history') changeSection('history');
 				else changeSection(lastItemsCategory);
 				break;
 
 			// Toggle help
-			case `Alt+/`:
+			case `${CTRL_OR_META}+i`:
 				event.preventDefault();
 				if (section !== 'instructions') changeSection('instructions');
 				else changeSection(lastItemsCategory);
 				break;
 
 			// Switch between item categories
-			case `Alt+ArrowLeft`:
-			case `Alt+ArrowRight`:
+			case `${CTRL_OR_META}+ArrowLeft`:
+			case `${CTRL_OR_META}+ArrowRight`:
 				event.preventDefault();
 				if (renameTable) {
 					const categories = ['items', 'warnings', 'errors', 'history', 'instructions'] as const;
 					const currentIndex = categories.indexOf(section);
-					const bumpedIndex = currentIndex + (keyId === `Alt+ArrowLeft` ? -1 : 1);
+					const bumpedIndex = currentIndex + (keyId === `${CTRL_OR_META}+ArrowLeft` ? -1 : 1);
 					const index = bumpedIndex < 0 ? categories.length + bumpedIndex : bumpedIndex % categories.length;
 					changeSection(categories[index]!);
 				}
 				break;
 
 			// Content navigation
-			case `Alt+Home`:
-			case `Alt+End`:
+			case `Home`:
+			case `End`:
 				event.preventDefault();
-				scroller?.scrollTo({top: keyId === `Alt+End` ? Infinity : 0});
+				scroller?.scrollTo({top: keyId === `End` ? Infinity : 0});
 				break;
 
-			case `Alt+PageUp`:
-			case `Alt+PageDown`:
+			case `PageUp`:
+			case `PageDown`:
 				event.preventDefault();
 				if (scroller) {
 					const height = scroller.element.clientHeight;
 					const scrollAmount = Math.max(height * 0.8, height - 100);
-					scroller.scrollBy({top: keyId === `Alt+PageUp` ? -scrollAmount : scrollAmount});
+					scroller.scrollBy({top: keyId === `PageUp` ? -scrollAmount : scrollAmount});
 				}
 				break;
 
@@ -247,12 +247,19 @@ export function App({
 
 				<Help
 					tooltip={`Shortcuts:
-Alt+/: toggle instructions
-Alt+←/→: cycle between sections
-Alt+↑/↓: hold to scroll up/down
-Alt+PgUp/PgDown: page up/down
-Alt+Home/End: top top/bottom
-${CTRL_OR_CMD}+Escape: cancel/close window`}
+${CTRL_OR_CMD}+h - toggle history
+${CTRL_OR_CMD}+i - toggle instructions
+${CTRL_OR_CMD}+←/→ - cycle between sections
+Alt+↑/↓ - hold to scroll up/down
+PgUp/PgDown - page up/down
+Home/End - top top/bottom
+Shift+Enter - update preview table
+${CTRL_OR_CMD}+Enter - submit and rename files
+${CTRL_OR_CMD}+Escape - cancel/close window
+
+History list:
+↑/↓,PgUp,PgDown,Home,End - navigate
+Enter - select`}
 				/>
 
 				<Select transparent value={section} onChange={(category) => changeSection(category as SectionName)}>
@@ -368,7 +375,7 @@ function TemplateControls({
 					variant={hasErrors ? 'danger' : 'success'}
 					disabled={isRenameTableLoading || hasErrors}
 					onClick={() => onSubmit(template)}
-					tooltip={hasErrors ? `There are some errors` : `Close the window and rename files`}
+					tooltip={hasErrors ? `There are some errors` : `Submit template and rename files`}
 				>
 					<div class="buttonTitle">
 						<span>Rename</span>

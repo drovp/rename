@@ -33,7 +33,7 @@ export function History({history, onSelect}: HistoryProps) {
 
 	useEffect(() => {
 		// Blur any active element as history section takes over navigation
-		if (document.activeElement instanceof HTMLElement) document.activeElement.blur();
+		blurActiveElement();
 
 		const container = containerRef.current;
 		if (!container) return;
@@ -42,6 +42,8 @@ export function History({history, onSelect}: HistoryProps) {
 		const moveIndex = (delta: number) =>
 			setSelectedIndex((index) => {
 				const newIndex = clamp(0, index + delta, history.length - 1);
+
+				blurActiveElement();
 
 				// Scroll element into view
 				const button = container.querySelector<HTMLElement>(`button[data-index="${newIndex}"]`);
@@ -115,4 +117,8 @@ export function History({history, onSelect}: HistoryProps) {
 			))}
 		</Scrollable>
 	);
+}
+
+function blurActiveElement() {
+	if (document.activeElement instanceof HTMLElement) document.activeElement.blur();
 }
