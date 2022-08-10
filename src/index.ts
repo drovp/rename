@@ -62,14 +62,14 @@ const optionsSchema: OptionsSchema<Options> = [
 	{
 		name: 'onMissingMeta',
 		type: 'select',
-		default: 'disabled',
+		default: 'abort',
 		options: {
 			abort: `Abort, don't rename anything`,
 			skip: `Skip renaming metaless file`,
 			ignore: `Ignore, leave values as undefined`,
 		},
 		title: 'On missing meta',
-		description: `What to do when template requires file meta data, but it couldn't be retrieved for any file in a batch.<br>Note: When renaming through preview window, this options is forced to <b>ignore</b>`,
+		description: `What to do when template requires file meta data, but it couldn't be retrieved for any of the files in the batch.<br>Note: When renaming through preview window, this options is forced to <b>ignore</b>, as you can see and approve the result.`,
 	},
 	{
 		name: 'replacement',
