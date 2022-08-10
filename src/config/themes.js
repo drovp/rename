@@ -13,7 +13,7 @@ function themeVariant({name, hue = 0, chroma = 0, min = 100, max = 900, step = 5
 		const zLevel = flipZ ? 1000 - level : level;
 		color.lch.l = (level / 1000) * 100;
 		const saturationX = (500 - centerDiff) / 500;
-		const saturation = 1 - Math.cos((saturationX * Math.PI) / 2);
+		const saturation = Math.sqrt(1 - Math.pow(saturationX - 1, 2));
 		color.lch.c = chroma * saturation;
 		vars[`--${name}-${level}`] = color.to('srgb').toString({format: 'hex'});
 		vars[`--${name}-z${level}`] = `var(--${name}-${zLevel})`;
@@ -38,9 +38,9 @@ module.exports = {
 		'--brand': '#a767fa',
 		'--fg': 'var(--grey-100)',
 		'--variant-fg': 'var(--grey-1000)',
-		'--bg': 'var(--grey-850)',
-		'--bg-darker': 'var(--grey-800)',
-		'--bg-lighter': 'var(--grey-900)',
+		'--bg': new Color('lch', [100 - 17.5, 0, 0]).toString({format: 'hex'}),
+		'--bg-darker': 'var(--grey-z200)',
+		'--bg-lighter': 'var(--grey-z150)',
 		'--curtain': '#fff8',
 		'--highlight': '#fff4',
 		'--shadow': '#0003',
@@ -81,9 +81,9 @@ module.exports = {
 		'--brand': '#B882FF',
 		'--fg': 'var(--grey-900)',
 		'--variant-fg': 'var(--grey-1000)',
-		'--bg': 'var(--grey-150)',
-		'--bg-darker': 'var(--grey-100)',
-		'--bg-lighter': 'var(--grey-200)',
+		'--bg': new Color('lch', [17.5, 0, 0]).toString({format: 'hex'}),
+		'--bg-darker': 'var(--grey-z150)',
+		'--bg-lighter': 'var(--grey-z200)',
 		'--curtain': '#0008',
 		'--highlight': '#ffffff18',
 		'--shadow': '#0003',
