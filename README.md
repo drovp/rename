@@ -2,7 +2,12 @@
 
 [Drovp](https://drovp.app) plugin for bulk renaming files according to a configured template.
 
-Features:
+<br>
+<p align="center">
+  <img src="https://user-images.githubusercontent.com/47283320/183929031-74e6493c-f665-4c8d-9bd6-baf7b8bba815.png" />
+</p>
+
+### Features:
 
 -   Powerful templating using JavaScript template literals.
 -   Extensive variables and utilities available in template expressions.
