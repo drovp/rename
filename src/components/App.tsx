@@ -181,19 +181,19 @@ export function App({
 				break;
 
 			// Content navigation
-			case `Home`:
-			case `End`:
+			case `Alt+Home`:
+			case `Alt+End`:
 				event.preventDefault();
-				scroller?.scrollTo({top: keyId === `End` ? Infinity : 0});
+				scroller?.scrollTo({top: keyId === `Alt+End` ? Infinity : 0});
 				break;
 
-			case `PageUp`:
-			case `PageDown`:
+			case `Alt+PageUp`:
+			case `Alt+PageDown`:
 				event.preventDefault();
 				if (scroller) {
 					const height = scroller.element.clientHeight;
 					const scrollAmount = Math.max(height * 0.8, height - 100);
-					scroller.scrollBy({top: keyId === `PageUp` ? -scrollAmount : scrollAmount});
+					scroller.scrollBy({top: keyId === `Alt+PageUp` ? -scrollAmount : scrollAmount});
 				}
 				break;
 
@@ -251,8 +251,8 @@ ${CTRL_OR_CMD}+h - toggle history
 ${CTRL_OR_CMD}+i - toggle instructions
 ${CTRL_OR_CMD}+←/→ - cycle between sections
 Alt+↑/↓ - hold to scroll up/down
-PgUp/PgDown - page up/down
-Home/End - top top/bottom
+Alt+PgUp/PgDown - page up/down
+Alt+Home/End - top top/bottom
 Shift+Enter - update preview table
 ${CTRL_OR_CMD}+Enter - submit and rename files
 ${CTRL_OR_CMD}+Escape - cancel/close window
