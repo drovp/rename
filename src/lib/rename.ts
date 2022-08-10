@@ -243,7 +243,7 @@ export async function createRenameTable(
 
 			// What to do when template accesses a missing meta property
 			if (accessedMissingProps.length > 0) {
-				const message = `Template accessed missing meta properties:\n- ${accessedMissingProps.join('\n- ')}`;
+				const message = `Missing meta: ${accessedMissingProps.join(', ')}`;
 				switch (onMissingMeta) {
 					case 'abort':
 						renameItem.skip = true;

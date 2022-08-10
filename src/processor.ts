@@ -38,7 +38,10 @@ export default async ({id, inputs, options}: Payload, {output, dependencies, log
 		log(`Renaming files to temporary paths...`);
 
 		for (const item of renameTable.items) {
-			if (item.skip) continue;
+			if (item.skip) {
+				log(`Skipping: "${item.inputPath}"\n  Reason: ${item.message?.message}`)
+				continue;
+			}
 			const tmpPath = `${item.inputPath}.tmp${id}`;
 			await FSP.rename(item.inputPath, tmpPath);
 			rewindSteps.push({type: 'rename', from: tmpPath, to: item.inputPath});
