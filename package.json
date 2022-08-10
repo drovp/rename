@@ -40,29 +40,29 @@
 		"postversion": "npm-run-all git-push npm-publish"
 	},
 	"devDependencies": {
-		"@drovp/types": "^4.7.1",
-		"@drovp/utils": "^2.0.2",
+		"@drovp/types": "^4.11.0",
+		"@drovp/utils": "^2.1.2",
 		"@tomasklaen/checksum": "^1.1.0",
 		"@types/marked": "^4.0.3",
 		"dayjs": "^1.11.4",
 		"del": "^6.1.1",
 		"element-scroller": "^1.0.1",
-		"esbuild": "^0.14.40",
+		"esbuild": "^0.15.0",
 		"expand-template-literal": "^1.0.3",
-		"ffprobe-normalized": "^1.0.1",
+		"ffprobe-normalized": "^2.2.3",
 		"filenamify": "^5.1.1",
 		"gulp": "^4.0.2",
 		"gulp-dart-sass": "^1.0.2",
 		"gulp-postcss": "^9.0.1",
 		"gulp-sass-glob": "^1.1.0",
-		"marked": "^4.0.16",
+		"marked": "^4.0.18",
 		"npm-run-all": "^4.1.5",
 		"p-all": "^4.0.0",
 		"platform-paths": "^1.2.2",
 		"postcss-declarations": "^1.0.0",
-		"postcss-preset-env": "^7.6.0",
+		"postcss-preset-env": "^7.7.2",
 		"postcss-prune-var": "^1.0.4",
 		"tslib": "^2.4.0",
-		"typescript": "^4.7.2"
+		"typescript": "^4.7.4"
 	}
 }

@@ -1,5 +1,6 @@
 import {clipboard} from 'electron';
-import {openContextMenu, MenuItemConstructorOptions} from '@drovp/utils/modal-window';
+import {openContextMenu} from '@drovp/utils/modal-window';
+import {MenuItemConstructorOptions} from '@drovp/types';
 import {h} from 'preact';
 import {useRef, useState, useEffect, Ref} from 'preact/hooks';
 import {RenameTable as RenameTableData, RenameItem as RenameItemData} from 'lib/rename';
