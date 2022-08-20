@@ -1,6 +1,5 @@
 import {Plugin, PayloadData, OptionsSchema, makeAcceptsFlags, AppSettings} from '@drovp/types';
-
-const isMac = process.platform === 'darwin';
+import * as shortcuts from 'config/shortcuts';
 
 type Options = {
 	template: string;
@@ -42,9 +41,9 @@ const optionsSchema: OptionsSchema<Options> = [
 		type: 'boolean',
 		default: false,
 		title: 'Preview',
-		description: `Preview renaming before anything actually gets renamed. Can also be enabled by holding <kbd>${
-			process.platform === 'darwin' ? 'Alt' : 'Ctrl'
-		}</kbd> when dropping items into a profile.<br>
+		description: `Preview renaming before anything actually gets renamed. Can also be enabled by holding <kbd>${shortcuts.humanShortcut(
+			shortcuts.openPreview
+		)}</kbd> when dropping items into the profile.<br>
 		Note: Going through preview enforces <b>On missing meta</b> option to <b>ignore</b>.`,
 	},
 	{
@@ -125,10 +124,10 @@ export default (plugin: Plugin) => {
 		threadType: 'io',
 		options: optionsSchema,
 		modifierDescriptions: {
-			[isMac ? 'Alt' : 'Ctrl']: `show preview/tweaking window before renaming`,
+			[shortcuts.openPreview]: `show preview/tweaking window before renaming`,
 		},
 		operationPreparator: async (payload, utils) => {
-			if (payload.options.preview || (isMac ? ['alt', 'Alt'] : ['ctrl', 'Ctrl']).includes(utils.modifiers)) {
+			if (payload.options.preview || utils.modifiers === shortcuts.openPreview) {
 				const preparatorPayload: PreparatorPayload = {
 					payload,
 					settings: utils.settings,

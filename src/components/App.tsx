@@ -8,6 +8,7 @@ import {RenameTable as RenameTableData, createRenameTable} from 'lib/rename';
 import {eem, idKey, idModifiers} from 'lib/utils';
 import {makeScroller, Scroller} from 'element-scroller';
 import {useEventListener, useElementSize, useScrollPosition, useCachedState} from 'lib/hooks';
+import * as shortcuts from 'config/shortcuts';
 import {Textarea} from 'components/Textarea';
 import {Button} from 'components/Button';
 import {Select, SelectOption} from 'components/Select';
@@ -19,8 +20,7 @@ import {History} from 'components/History';
 import {RenameTable, ItemsCategory, isItemsCategory} from 'components/RenameTable';
 import {Tag} from 'components/Tag';
 
-const CTRL_OR_CMD = process.platform === 'darwin' ? 'Cmd' : 'Ctrl';
-const CTRL_OR_META = process.platform === 'darwin' ? 'Meta' : 'Ctrl';
+const {humanShortcut} = shortcuts;
 
 type SectionName = ItemsCategory | 'history' | 'instructions';
 
@@ -149,59 +149,59 @@ export function App({
 
 		switch (keyId) {
 			// Cancel
-			case `${CTRL_OR_META}+Escape`:
+			case shortcuts.cancel:
 				onCancel();
 				break;
 
 			// Toggle history
-			case `${CTRL_OR_META}+h`:
+			case shortcuts.toggleHistory:
 				event.preventDefault();
 				if (section !== 'history') changeSection('history');
 				else changeSection(lastItemsCategory);
 				break;
 
-			// Toggle help
-			case `${CTRL_OR_META}+i`:
+			// Toggle instructions
+			case shortcuts.toggleInstructions:
 				event.preventDefault();
 				if (section !== 'instructions') changeSection('instructions');
 				else changeSection(lastItemsCategory);
 				break;
 
 			// Switch between item categories
-			case `${CTRL_OR_META}+ArrowLeft`:
-			case `${CTRL_OR_META}+ArrowRight`:
+			case shortcuts.switchCategoryLeft:
+			case shortcuts.switchCategoryRight:
 				event.preventDefault();
 				if (renameTable) {
 					const categories = ['items', 'warnings', 'errors', 'history', 'instructions'] as const;
 					const currentIndex = categories.indexOf(section);
-					const bumpedIndex = currentIndex + (keyId === `${CTRL_OR_META}+ArrowLeft` ? -1 : 1);
+					const bumpedIndex = currentIndex + (keyId === shortcuts.switchCategoryLeft ? -1 : 1);
 					const index = bumpedIndex < 0 ? categories.length + bumpedIndex : bumpedIndex % categories.length;
 					changeSection(categories[index]!);
 				}
 				break;
 
 			// Content navigation
-			case `Alt+Home`:
-			case `Alt+End`:
+			case shortcuts.contentTop:
+			case shortcuts.contentBottom:
 				event.preventDefault();
-				scroller?.scrollTo({top: keyId === `Alt+End` ? Infinity : 0});
+				scroller?.scrollTo({top: keyId === shortcuts.contentBottom ? Infinity : 0});
 				break;
 
-			case `Alt+PageUp`:
-			case `Alt+PageDown`:
+			case shortcuts.contentPageUp:
+			case shortcuts.contentPageDown:
 				event.preventDefault();
 				if (scroller) {
 					const height = scroller.element.clientHeight;
 					const scrollAmount = Math.max(height * 0.8, height - 100);
-					scroller.scrollBy({top: keyId === `Alt+PageUp` ? -scrollAmount : scrollAmount});
+					scroller.scrollBy({top: keyId === shortcuts.contentPageUp ? -scrollAmount : scrollAmount});
 				}
 				break;
 
-			case `Alt+ArrowUp`:
-			case `Alt+ArrowDown`:
+			case shortcuts.contentScrollUp:
+			case shortcuts.contentScrollDown:
 				event.preventDefault();
 				if (scroller && !event.repeat) {
-					const amount = keyId === `Alt+ArrowUp` ? -600 : 600;
+					const amount = keyId === shortcuts.contentScrollUp ? -600 : 600;
 					scroller.glide({top: amount});
 					addEventListener('keyup', scroller.stop, {once: true});
 				}
@@ -247,15 +247,17 @@ export function App({
 
 				<Help
 					tooltip={`Shortcuts:
-${CTRL_OR_CMD}+h - toggle history
-${CTRL_OR_CMD}+i - toggle instructions
-${CTRL_OR_CMD}+←/→ - cycle between sections
-Alt+↑/↓ - hold to scroll up/down
-Alt+PgUp/PgDown - page up/down
-Alt+Home/End - top top/bottom
-Shift+Enter - update preview table
-${CTRL_OR_CMD}+Enter - submit and rename files
-${CTRL_OR_CMD}+Escape - cancel/close window
+${humanShortcut(shortcuts.toggleHistory)} - toggle history
+${humanShortcut(shortcuts.toggleInstructions)} - toggle instructions
+${humanShortcut(shortcuts.switchCategoryLeft)} / ${humanShortcut(
+						shortcuts.switchCategoryRight
+					)} - cycle between sections
+${humanShortcut(shortcuts.contentScrollUp)} / ${humanShortcut(shortcuts.contentScrollDown)} - hold to scroll up/down
+${humanShortcut(shortcuts.contentPageUp)} / ${humanShortcut(shortcuts.contentPageDown)} - page up/down
+${humanShortcut(shortcuts.contentTop)} / ${humanShortcut(shortcuts.contentBottom)} - top top/bottom
+${humanShortcut(shortcuts.updatePreview)} - update preview table
+${humanShortcut(shortcuts.submit)} - submit and rename files
+${humanShortcut(shortcuts.cancel)} - cancel/close window
 
 History list:
 ↑/↓,PgUp,PgDown,Home,End - navigate
@@ -330,13 +332,13 @@ function TemplateControls({
 	useEventListener<KeyboardEvent>('keydown', (event) => {
 		switch (idKey(event)) {
 			// Update preview
-			case 'Shift+Enter':
+			case shortcuts.updatePreview:
 				onUpdate(template);
 				event.preventDefault();
 				break;
 
 			// Submit
-			case `${CTRL_OR_META}+Enter`:
+			case shortcuts.submit:
 				if (!isRenameTableLoading && !hasErrors) onSubmit(template);
 				event.preventDefault();
 				break;
@@ -368,7 +370,7 @@ function TemplateControls({
 				>
 					<div class="buttonTitle">
 						<span>Preview</span>
-						<kbd>Shift+Enter</kbd>
+						<kbd>{humanShortcut(shortcuts.updatePreview)}</kbd>
 					</div>
 				</Button>
 				<Button
@@ -379,7 +381,7 @@ function TemplateControls({
 				>
 					<div class="buttonTitle">
 						<span>Rename</span>
-						<kbd>{CTRL_OR_CMD}+Enter</kbd>
+						<kbd>{humanShortcut(shortcuts.submit)}</kbd>
 					</div>
 				</Button>
 			</div>
