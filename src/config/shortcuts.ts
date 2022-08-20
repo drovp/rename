@@ -4,7 +4,7 @@ export const Ctrl_OR_Cmd = IS_MAC ? 'Cmd' : 'Ctrl';
 export const Control_OR_Command = IS_MAC ? 'Control' : 'Command';
 
 // Drop modifiers
-export const openPreview = IS_MAC ? `Alt` : `Ctrl`;
+export const openPreview = `Ctrl`;
 
 // Preview shortcuts
 export const updatePreview = `Shift+Enter`;
