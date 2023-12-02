@@ -11,6 +11,9 @@ export const updatePreview = `Shift+Enter`;
 export const submit = `${Ctrl_OR_Meta}+Enter`;
 export const cancel = `${Ctrl_OR_Meta}+Escape`;
 
+export const showItems = `Alt+1`;
+export const showWarnings = `Alt+2`;
+export const showErrors = `Alt+3`;
 export const toggleHistory = `${Ctrl_OR_Meta}+h`;
 export const toggleInstructions = `${Ctrl_OR_Meta}+i`;
 

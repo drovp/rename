@@ -20,7 +20,7 @@ import {History} from 'components/History';
 import {RenameTable, ItemsCategory, isItemsCategory} from 'components/RenameTable';
 import {Tag} from 'components/Tag';
 
-const {humanShortcut} = shortcuts;
+const {humanShortcut: hs} = shortcuts;
 
 type SectionName = ItemsCategory | 'history' | 'instructions';
 
@@ -153,6 +153,21 @@ export function App({
 				onCancel();
 				break;
 
+			case shortcuts.showItems:
+				event.preventDefault();
+				changeSection('items');
+				break;
+
+			case shortcuts.showWarnings:
+				event.preventDefault();
+				changeSection('warnings');
+				break;
+
+			case shortcuts.showErrors:
+				event.preventDefault();
+				changeSection('errors');
+				break;
+
 			// Toggle history
 			case shortcuts.toggleHistory:
 				event.preventDefault();
@@ -206,6 +221,11 @@ export function App({
 					addEventListener('keyup', scroller.stop, {once: true});
 				}
 				break;
+
+			// Prevent window menu
+			case 'Alt+Alt':
+				event.preventDefault();
+				break;
 		}
 
 		// Refocus textarea when normal key is pressed while it's not already focused
@@ -245,33 +265,35 @@ export function App({
 					</SelectOption>
 				</Select>
 
+				<Select transparent value={section} onChange={(category) => changeSection(category as SectionName)}>
+					<SelectOption value="history" tooltip={`Templates history (${hs(shortcuts.toggleHistory)})`}>
+						<Icon name="history" /> History
+					</SelectOption>
+					<SelectOption
+						value="instructions"
+						tooltip={`Template creation instructions (${hs(shortcuts.toggleInstructions)})`}
+					>
+						<Icon name="article" /> Instructions
+					</SelectOption>
+				</Select>
+
 				<Help
 					tooltip={`Shortcuts:
-${humanShortcut(shortcuts.toggleHistory)} - toggle history
-${humanShortcut(shortcuts.toggleInstructions)} - toggle instructions
-${humanShortcut(shortcuts.switchCategoryLeft)} / ${humanShortcut(
-						shortcuts.switchCategoryRight
-					)} - cycle between sections
-${humanShortcut(shortcuts.contentScrollUp)} / ${humanShortcut(shortcuts.contentScrollDown)} - hold to scroll up/down
-${humanShortcut(shortcuts.contentPageUp)} / ${humanShortcut(shortcuts.contentPageDown)} - page up/down
-${humanShortcut(shortcuts.contentTop)} / ${humanShortcut(shortcuts.contentBottom)} - top top/bottom
-${humanShortcut(shortcuts.updatePreview)} - update preview table
-${humanShortcut(shortcuts.submit)} - submit and rename files
-${humanShortcut(shortcuts.cancel)} - cancel/close window
+${hs(shortcuts.showItems)}/${hs(shortcuts.showWarnings)}/${hs(shortcuts.showErrors)} - show items/warnings/errors
+${hs(shortcuts.toggleHistory)} - toggle history
+${hs(shortcuts.toggleInstructions)} - toggle instructions
+${hs(shortcuts.switchCategoryLeft)} / ${hs(shortcuts.switchCategoryRight)} - cycle between sections
+${hs(shortcuts.contentScrollUp)} / ${hs(shortcuts.contentScrollDown)} - hold to scroll up/down
+${hs(shortcuts.contentPageUp)} / ${hs(shortcuts.contentPageDown)} - page up/down
+${hs(shortcuts.contentTop)} / ${hs(shortcuts.contentBottom)} - top top/bottom
+${hs(shortcuts.updatePreview)} - update preview table
+${hs(shortcuts.submit)} - submit and rename files
+${hs(shortcuts.cancel)} - cancel/close window
 
 History list:
 ↑/↓,PgUp,PgDown,Home,End - navigate
 Enter - select`}
 				/>
-
-				<Select transparent value={section} onChange={(category) => changeSection(category as SectionName)}>
-					<SelectOption value="history" tooltip="History of custom templates used">
-						<Icon name="history" /> History
-					</SelectOption>
-					<SelectOption value="instructions">
-						<Icon name="article" /> Instructions
-					</SelectOption>
-				</Select>
 			</nav>
 
 			{section === 'instructions' ? (
@@ -370,7 +392,7 @@ function TemplateControls({
 				>
 					<div class="buttonTitle">
 						<span>Preview</span>
-						<kbd>{humanShortcut(shortcuts.updatePreview)}</kbd>
+						<kbd>{hs(shortcuts.updatePreview)}</kbd>
 					</div>
 				</Button>
 				<Button
@@ -381,7 +403,7 @@ function TemplateControls({
 				>
 					<div class="buttonTitle">
 						<span>Rename</span>
-						<kbd>{humanShortcut(shortcuts.submit)}</kbd>
+						<kbd>{hs(shortcuts.submit)}</kbd>
 					</div>
 				</Button>
 			</div>

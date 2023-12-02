@@ -68,12 +68,22 @@ export function RenameTable({
 			style={`--inputWidth:${inputWidth}`}
 			items={data[category]}
 			scrollPositionId={scrollPositionId}
-			render={(item: RenameItemData) => <RenameItem key={item.inputPath} data={data} item={item} />}
+			render={(item, index) => (
+				<RenameItem class={index % 2 === 0 ? '-even' : '-odd'} key={item.inputPath} data={data} item={item} />
+			)}
 		/>
 	);
 }
 
-export function RenameItem({item, data}: {item: RenameItemData; data: RenameTableData}) {
+export function RenameItem({
+	item,
+	data,
+	class: className,
+}: {
+	class?: string;
+	item: RenameItemData;
+	data: RenameTableData;
+}) {
 	const {commonDir} = data;
 	function showDialog(type: 'meta' | 'message') {
 		openDialog({
@@ -113,8 +123,11 @@ export function RenameItem({item, data}: {item: RenameItemData; data: RenameTabl
 		openContextMenu(items);
 	}
 
+	let classNames = 'RenameItem';
+	if (className) classNames += ` ${className}`;
+
 	return (
-		<div class="RenameItem" onContextMenu={handleContext}>
+		<div class={classNames} onContextMenu={handleContext}>
 			<div class="cell -input" title={item.inputPath}>
 				<div class="path">&lrm;{commonDir ? item.inputPath.slice(commonDir.length + 1) : item.inputPath}</div>
 				{item.meta != null && (
