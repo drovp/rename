@@ -14,11 +14,11 @@ export const cancel = `${Ctrl_OR_Meta}+Escape`;
 export const showItems = `Alt+1`;
 export const showWarnings = `Alt+2`;
 export const showErrors = `Alt+3`;
-export const toggleHistory = `${Ctrl_OR_Meta}+h`;
-export const toggleInstructions = `${Ctrl_OR_Meta}+i`;
+export const toggleHistory = `Alt+h`;
+export const toggleInstructions = `Alt+i`;
 
-export const switchCategoryLeft = `${Ctrl_OR_Meta}+ArrowLeft`;
-export const switchCategoryRight = `${Ctrl_OR_Meta}+ArrowRight`;
+export const switchCategoryLeft = `Alt+ArrowLeft`;
+export const switchCategoryRight = `Alt+ArrowRight`;
 
 export const contentTop = `Alt+Home`;
 export const contentBottom = `Alt+End`;
