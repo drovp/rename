@@ -39,7 +39,7 @@ export default async ({id, inputs, options}: Payload, {output, dependencies, log
 
 		for (const item of renameTable.items) {
 			if (item.skip) {
-				log(`Skipping: "${item.inputPath}"\n  Reason: ${item.message?.message}`)
+				log(`Skipping: "${item.inputPath}"\n  Reason: ${item.message?.message}`);
 				continue;
 			}
 			const tmpPath = `${item.inputPath}.tmp${id}`;
@@ -57,13 +57,15 @@ export default async ({id, inputs, options}: Payload, {output, dependencies, log
 
 			// Add all folders from input path's directory to common input dir
 			// to be deleted if they are empty after the rename.
-			const commonTargetDiff = Path.dirname(inputPath)
-				.slice(commonInputDir?.length || 0)
-				.replace(/(^[\\\/]+)|([\\\/]+$)/, '');
-			const commonTargetDirs = commonTargetDiff.split(/[\\\/]+/);
-			for (let i = commonTargetDirs.length; i > 0; i--) {
-				const path = Path.join(commonInputDir || '', ...commonTargetDirs.slice(0, i));
-				dirsToDeleteWhenEmpty.add(path);
+			if (options.deleteEmptyDirectories) {
+				const commonTargetDiff = Path.dirname(inputPath)
+					.slice(commonInputDir?.length || 0)
+					.replace(/(^[\\\/]+)|([\\\/]+$)/, '');
+				const commonTargetDirs = commonTargetDiff.split(/[\\\/]+/);
+				for (let i = commonTargetDirs.length; i > 0; i--) {
+					const path = Path.join(commonInputDir || '', ...commonTargetDirs.slice(0, i));
+					dirsToDeleteWhenEmpty.add(path);
+				}
 			}
 
 			// Backup existing files so the operation can be rewound, and register them up for deletion

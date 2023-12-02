@@ -7,6 +7,7 @@ type Options = {
 	sorting: 'disabled' | 'lexicographical' | 'natural';
 	overwrite: boolean;
 	preview: boolean;
+	deleteEmptyDirectories: boolean;
 	emit: boolean;
 	onMissingMeta: 'abort' | 'skip' | 'ignore';
 	replacement: string;
@@ -87,6 +88,13 @@ const optionsSchema: OptionsSchema<Options> = [
 		step: 1,
 		title: 'Max length',
 		description: `Max filename length. Extensions will be preserved when possible.<br>Systems generally allow up to 255 characters, but that is asking for trouble, especially on Windows.`,
+	},
+	{
+		name: 'deleteEmptyDirectories',
+		type: 'boolean',
+		default: false,
+		title: 'Delete empty directories',
+		description: `If renaming leaves some directories empty, delete them.`,
 	},
 	{
 		name: 'emit',
