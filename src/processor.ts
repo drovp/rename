@@ -2,7 +2,7 @@ import type {ProcessorUtils} from '@drovp/types';
 import type {Payload, Dependencies} from './';
 import {promises as FSP} from 'fs';
 import * as Path from 'path';
-import {eem, statIfExists, deletePath, uid} from './lib/utils';
+import {eem, statIfExists, deletePath, uid, isEmptyDir} from './lib/utils';
 import {RenameItem, createRenameTable} from './lib/rename';
 
 type TmpRenameItem = RenameItem & {tmpPath: string};
@@ -151,8 +151,7 @@ export default async ({id, inputs, options}: Payload, {output, dependencies, log
 
 			for (const path of dirsToDeleteWhenEmptyArray) {
 				try {
-					// Fails when directory is not empty
-					await FSP.rmdir(path);
+					if (await isEmptyDir(path)) await FSP.rmdir(path);
 				} catch {}
 			}
 		}

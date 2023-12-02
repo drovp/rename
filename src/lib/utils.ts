@@ -88,6 +88,27 @@ export async function pathExists(path: string) {
 	}
 }
 
+/**
+ * Returns `true` only if path is a directory with no **files** anywhere inside
+ * (other empty directories are allowed), and `false` otherwise (missing,
+ * not a directory, any error happened, etc...).
+ */
+export async function isEmptyDir(path: string): Promise<boolean> {
+	try {
+		const stat = await FSP.stat(path);
+		if (!stat.isDirectory()) return false;
+
+		for (const file of await FSP.readdir(path)) {
+			const filePath = Path.join(path, file);
+			if (!(await isEmptyDir(filePath))) return false;
+		}
+
+		return true;
+	} catch {
+		return false;
+	}
+}
+
 export async function statIfExists(path: string) {
 	try {
 		return await FSP.stat(path);
