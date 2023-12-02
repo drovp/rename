@@ -4,7 +4,7 @@ Templates are JavaScript template literals allowing embedded expressions with ac
 ${filename}_suffix.${ext}
 ```
 
-If template is a relative path (doesn't start with `/` or a drive letter), it'll be resolved from the file's current directory. This means you can use `../` to move files up in directory tree, `foo/...` to move them into a new one, and a combination of both.
+If template results in a relative path, it'll be resolved from the file's current directory. This means you can use `../` to move files up in directory tree, or `foo/...` to move them into a new one.
 
 If template moves file into a directory that doesn't exist, it'll be created.
 
@@ -44,17 +44,13 @@ Example `${files[i].basename}`.
 
 Platform folders:
 
-```
-tmp, home, downloads, documents, pictures, music, videos, desktop
-```
+`tmp`, `home`, `downloads`, `documents`, `pictures`, `music`, `videos`, `desktop`
 
 ### Meta
 
 Media files can access their meta via `${meta.property}`. Available properties:
 
-```
-title, artist, track, genre, year, language, codec, container, channels, framerate, width, height
-```
+`title`, `artist`, `track`, `genre`, `year`, `language`, `codec`, `container`, `channels`, `framerate`, `width`, `height`
 
 But be careful, depending on input file, these properties are not guaranteed to be defined.
 
@@ -80,7 +76,7 @@ Example: `${Path.relative(foo, bar)}`
 
 #### **`Time()`**
 
-[day.js](https://day.js.org/docs/en/display/format) util to help with time.
+[day.js](https://day.js.org/docs/en/display/format) utility to help with time formatting.
 
 Example: `${Time().format('YY')}`
 
@@ -94,7 +90,9 @@ Example: `${uid()}`
 
 ---
 
-### Examples
+## Examples
+
+---
 
 Serialize all dropped files with automatically padded 1 based index:
 
@@ -106,24 +104,6 @@ Offset the 1 based index by 10 and pad it to length of `4` with `pad()` util:
 
 ```
 ${pad(n + 10, 4)}${extname}
-```
-
-... which is just a shorthand for:
-
-```
-${String(n + 10).padStart(4, '0')}${extname}
-```
-
-Offset and determine pad length based on max index:
-
-```
-${pad(n + 10, String(files.length).length)}${extname}
-```
-
-Pad `n` to `4` letters while using underscore to fill gaps:
-
-```
-${pad(n, 4, '_')}${extname}
 ```
 
 ---
@@ -142,7 +122,7 @@ ${filename.replace(/foo|bar/gi, 'baz')}${extname}
 
 ---
 
-Use audio file meta to name the file:
+Use audio file meta to rename music files:
 
 ```
 ${meta.artist} - ${meta.album} - ${meta.title}${extname}
@@ -156,26 +136,14 @@ ${meta.title || filename}${extname}
 
 Requires **On missing meta** option to be set to **Ignore**, otherwise missing meta means error, and renaming will abort.
 
-_Uses `ffprobe` to retrive the meta, which considerably slows down renaming._
+_Uses `ffprobe` to retrive the meta, which slows down renaming._
 
 ---
 
-Prepend operation start time to each filename:
+Prepend formatted operation start time to each filename:
 
 ```
 ${Time(starttime).format('YYYY-MM-DD-HH.mm.ss')}-${basename}
-```
-
-Prepend file's creation time to each filename:
-
-```
-${Time(birthtime).format('YYYY-MM-DD-HH.mm.ss')}-${basename}
-```
-
-Serialize and prepend current seconds since unix epoch:
-
-```
-${Time(starttime).unix()} ${N}${basename}
 ```
 
 ---
@@ -247,11 +215,13 @@ You'll get:
 
 ---
 
-Move file into your platform's pictures folder, ensuring no conflicts by prepending it's original location to the file name:
+Move files into your platform's **Pictures** folder, deduplicating by CRC32 hashing:
 
 ```
-${pictures}/${path.replace(/[\\\/\:]+/g, '-')}
+${pictures}/${CRC32}${extname}
 ```
+
+Requires **Overwrite** setting to be **enabled**.
 
 ---
 
