@@ -140,7 +140,7 @@ export default async ({id, inputs, options}: Payload, {output, dependencies, log
 
 		// Cleanup now empty directories
 		if (dirsToDeleteWhenEmpty.size > 0) {
-			log(`Cleaning up potential empty directories:`);
+			log(`Cleaning up potentially empty directories:`);
 			if (commonInputDir) dirsToDeleteWhenEmpty.add(commonInputDir);
 			const dirsToDeleteWhenEmptyArray = [...dirsToDeleteWhenEmpty];
 
@@ -151,7 +151,7 @@ export default async ({id, inputs, options}: Payload, {output, dependencies, log
 
 			for (const path of dirsToDeleteWhenEmptyArray) {
 				try {
-					if (await isEmptyDir(path)) await FSP.rmdir(path);
+					if (await isEmptyDir(path)) await FSP.rm(path, {recursive: true});
 				} catch {}
 			}
 		}
